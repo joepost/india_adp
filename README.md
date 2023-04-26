@@ -1,7 +1,7 @@
 # india_adp
 India Agricultural Dependent Population: MSc Research Project
 
-**Author:** Joe Post
+**Author:** Joe Post  
 **Date:** April-August 2023
 
 This repository contains the code and supporting files for the dissertation research project 'Small-scale Estimation of Agricultural Dependent Population in India' (title TBC). Code is written in python 3.10.9 using conda 23.3.1. 
