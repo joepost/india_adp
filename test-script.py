@@ -31,5 +31,9 @@ gdf = gpd.read_file(wdpath + filepath + "\IND_adm2.shp")
 
 print(gdf.head())
 
-plt.plot(gdf, color='green')
+
+# plot the map
+
+fig, ax = plt.subplots()
+gdf.plot(ax = ax, color='green').set_axis_off()
 plt.show()      # use 'show' to bring up a viz window
