@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from osgeo import gdal
 
-sys.path.append("C:\\Users\\joepo\\anaconda3\\envs\\dissertation\\Scripts")
+sys.path.append("C:\\Users\\joepo\\anaconda3\\envs\\dissertation\\Scripts")     # add the location of 'gdal_merge.py' script
 # import gdal_merge as gm  
 
 print('Packages imported.\n')
@@ -124,6 +124,8 @@ print()
 # *** READ FIRST ****
 # The functions below must be run through QGIS.
 # However, it should be possible to replace any QGIS functions with internal python packages (e.g. merge from GDAL)
+# UPDATE 30-JUN: Succesfully ran process in QGIS and generated the output .TIF file. 
+#   Consider completing the analysis this way and going back to replace QGIS processes later?
 
 # if not os.path.isfile(ghsl_merged):
 #     print('Merging GHSL input layers...')
