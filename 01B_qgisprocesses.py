@@ -4,7 +4,9 @@
 # SECTION 01B: QGIS Operations
 #   This file lists each of the progressive QGIS operations, as used in Sophie's Sri Lanka script.
 #   The script should be copied whole into QGIS Python plug-in and run. 
-# Date: 2023-07-06
+
+#   Tip: to inspect the documentation for QGIS processes, run: processing.algorithmHelp("processname")
+
 # Author: J Post
 
 # ==================================================================================================================
@@ -60,8 +62,50 @@ processing.run('gdal:warpreproject',
                     'MULTITHREADING': False,
                     'EXTRA': '',
                     'OUTPUT': ghsl_merged_wgs84})
-print('GHSL merged layers projection changed.')
+print('GHSL merged layers projection changed.\n')
 
 
+# 2.3 Clip to specified state boundary
+#   Due to the size of full Indian continent, processes from this point onwards are broken down by the state level
+#   This requires the creation of state-specific shapefile, from script 01_preparefiles.py
+print('Clipping GHSL raster layer to KARNATAKA district boundaries...\n')
+processing.run('gdal:cliprasterbymasklayer',
+                   {'INPUT': ghsl_merged_wgs84,     # raster to clip
+                    'MASK': districts_29_filepath,  # vector mask of desired boundaries
+                    'SOURCE_CRS': QgsCoordinateReferenceSystem('EPSG:4326'),
+                    'TARGET_CRS': QgsCoordinateReferenceSystem('EPSG:4326'),
+                    'KEEP_RESOLUTION': True,
+                    'OUTPUT': ghsl_29_clipped})
+print('GHSL raster layer clipped.\n')
 
 
+# 2.3 Vectorise GHSL layer
+print('Vectorising re-projected GHSL merged layer...\n')
+processing.run('gdal:polygonize',
+                   {'INPUT': ghsl_29_clipped, # **TODO: Switch input tp 'ghsl_merged_wgs84' when moving to whole India analysis
+                    'BAND': 1,
+                    'FIELD': 'settlement_type',
+                    'EIGHT_CONNECTEDNESS': False,
+                    'EXTRA': '',
+                    'OUTPUT': ghsl_poly})
+print('Re-projected GHSL merged layer vectorised.\n')
+
+
+# 2.4 Fix geometries on new polygon
+#   This is a process to ensure the generated vector features are valid, and follow OpenGIS compliance (e.g. polygons don't have rings crossing)
+#   For details, see: https://gis.stackexchange.com/questions/378154/what-is-fix-geometries-tool-actually-doing-in-qgis
+#   Or see: https://www.qgistutorials.com/en/docs/3/handling_invalid_geometries#handling-invalid-geometries-qgis3 
+print('Fixing geometries of GHSL poly layer...\n')
+processing.run('native:fixgeometries',
+                   {'INPUT': ghsl_poly,
+                    'OUTPUT': ghsl_poly_fixed})
+print('Geometries of GHSL poly layer fixed.\n')
+
+
+# 2.5 Clip the shape to India state boundaries
+print('Clipping GHSL poly layer...\n')
+processing.run('native:clip',
+                   {'INPUT': ghsl_poly_fixed,
+                    'OVERLAY': boundaries_state,
+                    'OUTPUT': ghsl_india_clipped})
+print('GHSL poly layer clipped.\n')

@@ -48,8 +48,20 @@ district_codes.head(10)
 # Read in shapefile
 states = gpd.read_file(boundaries_state)
 districts = gpd.read_file(boundaries_district)
+
+
+# ******************************
+# TODO: The code in this bracket is specified to Karnataka, as part of the test run. This will need to updated for the whole India approach. 
+
+# Create shapefile specific to Karnataka
 state_29 = states[states["NAME_1"]=="Karnataka"]
 districts_29 = districts[districts["NAME_1"]=="Karnataka"]
+
+# Export Karnataka shapefiles
+state_29.to_file(state_29_filepath, mode="w")
+districts_29.to_file(districts_29_filepath, mode="w")
+
+# ******************************
 
 # plot the map
 fig, ax = plt.subplots() 

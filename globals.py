@@ -4,8 +4,9 @@
 # SECTION 00: Globals
 #   This script contains the input and output file paths to be used in the main python scripts.
 
-# Date: 2023-06-19
-# Author: J Post
+# Author: Joe Post
+# Developed from F Lopane, S Ayling Sri Lanka Tanks project
+# [ADD GITHUB LINK]
 
 # ==================================================================================================================
 
@@ -48,8 +49,16 @@ ghsl_to_merge = glob.glob(os.path.join(ghslfolder, '*.tif'))
 
 # Generated files
 # These file paths store intermediate files generated during the analysis
-ghsl_merged = outputfolder + 'intermediates/ghsl/ghsl_india.tif'
-ghsl_merged_wgs84 = outputfolder + 'intermediates/ghsl/ghsl_india_wgs84.tif'
+ghsl_merged =           os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india.tif')
+ghsl_merged_wgs84 =     os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_wgs84.tif')         # CRS reprojected to WGS84
+ghsl_poly =             os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_vector.shp')        # GHSL converted to shapefile (vector)
+ghsl_poly_fixed =       os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_vector_fixed.shp')  # Shapefile with fixed geometries
+ghsl_india_clipped =    os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_vector_clipped.shp')
+
+state_29_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', 'state_29.shp')
+districts_29_filepath = os.path.join(outputfolder, 'intermediates', 'boundaries_district', 'districts_29.shp')
+ghsl_29_clipped =       os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_29_clipped.tif')
+
 
 
 # Output files
