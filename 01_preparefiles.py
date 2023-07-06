@@ -19,61 +19,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from osgeo import gdal
 
-sys.path.append("C:\\Users\\joepo\\anaconda3\\envs\\dissertation\\Scripts")     # add the location of 'gdal_merge.py' script
-# import gdal_merge as gm  
+
+from globals import *       # Imports the filepaths defined in globals.py
 
 print('Packages imported.\n')
-
-
-# ==================================================================================================================
-# 1. DEFINE FILE PATHS
-
-# Working directories
-repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp/'
-datafolder = repository + 'Data/'
-outputfolder = repository + 'Output/'
-
-# Input files
-boundaries_national =   datafolder + 'boundaries/gadm41_IND_0.shp'                        # GADM India boundaries shapefile
-boundaries_state =      datafolder + 'boundaries/gadm41_IND_1.shp'                        # GADM India boundaries shapefile
-boundaries_district =   datafolder + 'boundaries/gadm41_IND_2.shp'                        # GADM India boundaries shapefile
-boundaries_subdist =    datafolder + 'boundaries/gadm41_IND_3.shp'                        # GADM India boundaries shapefile
-locationcodes =         datafolder + 'census/CensusIndia2011_LocationDirectory.csv'       # State and district names and codes from Census
-pop_tif =               datafolder + 'worldpop/ind_ppp_2011_1km_Aggregated_UNadj.tif'     # WorldPop UN adjusted 1km 2011 (adjust as necessary)
-agland =                datafolder + 'dynamicworld/2020_dw_karnataka_cropland.tif'        # DynamicWorld extracted from GEE
-
-# GHSL component files
-# Selected files cover India 
-ghsl_raw_1 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R6_C25.tif'
-ghsl_raw_2 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R6_C26.tif'
-ghsl_raw_3 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R6_C27.tif'
-ghsl_raw_4 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R7_C25.tif'
-ghsl_raw_5 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R7_C26.tif'
-ghsl_raw_6 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R7_C27.tif'
-ghsl_raw_7 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R7_C28.tif'
-ghsl_raw_8 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R8_C26.tif'
-ghsl_raw_9 =  datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R8_C27.tif'
-ghsl_raw_10 = datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R8_C28.tif'
-ghsl_raw_11 = datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R9_C26.tif'
-ghsl_raw_12 = datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R9_C27.tif'
-ghsl_raw_13 = datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_R10_C26.tif'
-
-ghsl_to_merge = glob.glob(datafolder + 'ghsl/GHS_BUILT_S_E2030_GLOBE_R2023A_54009_100_V1_0_*.tif')  # creates a list containing all the files above
-ghsl_to_merge_str = " ".join(ghsl_to_merge)
-
-
-
-# Census statistics 
-# Currently, this file loads just the data for the test state Karnataka (State Code 29).
-# The file has been cleaned from the website download into a readable csv table.
-agworkers_29 =          datafolder + 'census/CensusIndia2011_IndustrialCategory_Karnataka_DDW-B04-2900_cln.csv'
-
-# Generated files
-# These file paths store intermediate files generated during the analysis
-ghsl_merged = outputfolder + 'intermediates/ghsl/ghsl_india.tif'
-
-# Output files
-# These file paths store the final output files used in the Results section
 
 
 # ==================================================================================================================
@@ -131,7 +80,7 @@ print()
 #     print('Merging GHSL input layers...')
 #     print()
 #     processing.run('gdal:merge',
-#                    {'INPUT': [ghsl_raw_1, ghsl_raw_2, ghsl_raw_3, ghsl_raw_4],
+#                    {'INPUT': ghsl_to_merge,
 #                     'PCT': False,
 #                     'SEPARATE': False,
 #                     'NODATA_INPUT': None,
