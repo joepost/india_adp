@@ -29,9 +29,8 @@ ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch
 # ghsl_model = 'built_E2030_100'    #GHSL Built-up Surface,         R2023, Epoch 2030, 100m,    Mollweide
 
 # 5. Set desired Worldpop model to be used
-worldpop_model = 'Aggregated_UNadj'
-# worldpop_model = 'Aggregated'
-
+worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation, unconstrained, adjusted to match UN estimates 
+# worldpop_model = 'Aggregated'         # Population count, Top-down estimation, unconstrained
 # ********************************************
 
 # Working directories
