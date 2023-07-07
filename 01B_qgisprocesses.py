@@ -167,12 +167,27 @@ processing.run('native:createspatialindex',
 
 # ==================================================================================================================
 # 4. QGIS PROCESSES: WorldPop
-#   Final output: 
+#   Final output: pop_points_clipped
 
 # 4.1 Create the point shape file of population from the Worldpop raster input
-if not os.path.isfile(pop_points):
-    processing.run('native:pixelstopoints',
+processing.run('native:pixelstopoints',
                    {'INPUT_RASTER': pop_tif,
                     'RASTER_BAND': 1,
                     'FIELD_NAME': 'pop_count',
                     'OUTPUT': pop_points})
+    
+
+# 4.2 Clip the shape to India state boundaries
+print('Clipping WorldPop points layer...\n')
+processing.run('native:clip',
+                   {'INPUT': pop_points,
+                    'OVERLAY': districts_29_filepath,    #boundaries_state,
+                    'OUTPUT': pop_points_clipped})
+print('WorldPop points layer clipped.\n')
+
+
+# ==================================================================================================================
+# 5. QGIS PROCESSES: Join WorldPop points to vector polygons
+
+# Possible to switch at this point to internal python processing?
+# i.e. using geopandas functions to perform joins and transformations 

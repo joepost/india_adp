@@ -16,7 +16,7 @@ import glob
 # ********************************************
 # TODO: 
 # 1. Set directory depending on user
-repository = os.getcwd() #'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
+repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
 
 # 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
 scale = '1km'
@@ -33,6 +33,7 @@ ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch
 worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation, unconstrained, adjusted to match UN estimates 
 # worldpop_model = 'Aggregated'         # Population count, Top-down estimation, unconstrained
 # ********************************************
+
 
 # Working directories
 datafolder = os.path.join(repository,'Data')
@@ -84,6 +85,7 @@ cropland_poly_clipped =     os.path.join(outputfolder, 'intermediates', 'dynamic
 cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_dissolved.shp')
 
 pop_points =            os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.shp')
+pop_points_clipped =    os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_clipped.shp')
 
 
 
