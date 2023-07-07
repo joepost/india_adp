@@ -29,7 +29,7 @@ print('Packages imported.\n')
 
 
 # ==================================================================================================================
-# 2. QGIS PROCESSES
+# 2. QGIS PROCESSES: GHSL
 
 # 2.1 Merge GHSL inputs into single raster covering all of India
 print('Merging GHSL input layers...\n')
@@ -65,7 +65,7 @@ processing.run('gdal:warpreproject',
 print('GHSL merged layers projection changed.\n')
 
 
-# 2.3 Clip to specified state boundary
+# 2.2b Clip to specified state boundary
 #   Due to the size of full Indian continent, processes from this point onwards are broken down by the state level
 #   This requires the creation of state-specific shapefile, from script 01_preparefiles.py
 print('Clipping GHSL raster layer to KARNATAKA district boundaries...\n')
@@ -103,9 +103,29 @@ print('Geometries of GHSL poly layer fixed.\n')
 
 
 # 2.5 Clip the shape to India state boundaries
+#       Does this need to be repeated after clipping with mask (step 2.2b)?
+#       YES - the mask has created a square image to the bounding box of state; need to clip polygon exactly
 print('Clipping GHSL poly layer...\n')
 processing.run('native:clip',
                    {'INPUT': ghsl_poly_fixed,
-                    'OVERLAY': boundaries_state,
+                    'OVERLAY': districts_29_filepath,    #boundaries_state,
                     'OUTPUT': ghsl_india_clipped})
 print('GHSL poly layer clipped.\n')
+
+
+
+# ==================================================================================================================
+# 3. QGIS PROCESSES: Agricultural Lands (Dynamic World)
+
+
+# 3.1 Vectorise DW croplands layer
+print('Vectorising DW croplands raster layer...\n')
+processing.run('gdal:polygonize',
+                   {'INPUT': cropland, 
+                    'BAND': 1,
+                    'FIELD': 'cropland_bool',
+                    'EIGHT_CONNECTEDNESS': False,
+                    'EXTRA': '',
+                    'OUTPUT': cropland_poly})
+print('DW croplands layer vectorised.\n')
+

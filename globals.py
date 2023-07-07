@@ -13,21 +13,40 @@
 import os
 import glob
 
+# ********************************************
+# TODO: 
+# 1. Set directory depending on user
+repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
+
+# 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
+scale = '1km'
+# scale = '100m'
+
+# 3. Set flag for working with single state or whole of India
+
+# 4. Set desired GHSL model to be used
+ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch 2030, 1km,     Mollweide
+# ghsl_model = 'built_E2030_100'    #GHSL Built-up Surface,         R2023, Epoch 2030, 100m,    Mollweide
+
+# 5. Set desired Worldpop model to be used
+worldpop_model = 'Aggregated_UNadj'
+# worldpop_model = 'Aggregated'
+
+# ********************************************
 
 # Working directories
-repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp'     # Update as necessary depending on user
 datafolder = os.path.join(repository,'Data')
 outputfolder = os.path.join(repository,'Output')
 
 
 # Input files
-boundaries_national =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_0.shp')                        # GADM India boundaries shapefile
-boundaries_state =      os.path.join(datafolder, 'boundaries', 'gadm41_IND_1.shp')                        # GADM India boundaries shapefile
-boundaries_district =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_2.shp' )                       # GADM India boundaries shapefile
-boundaries_subdist =    os.path.join(datafolder, 'boundaries', 'gadm41_IND_3.shp')                        # GADM India boundaries shapefile
-locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_LocationDirectory.csv')       # State and district names and codes from Census
-pop_tif =               os.path.join(datafolder, 'worldpop', 'ind_ppp_2011_1km_Aggregated_UNadj.tif')     # WorldPop UN adjusted 1km 2011 (adjust as necessary)
-agland =                os.path.join(datafolder, 'dynamicworld', '2020_dw_karnataka_cropland.tif')        # DynamicWorld extracted from GEE
+boundaries_national =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_0.shp')                          # GADM India boundaries shapefile
+boundaries_state =      os.path.join(datafolder, 'boundaries', 'gadm41_IND_1.shp')                          # GADM India boundaries shapefile
+boundaries_district =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_2.shp' )                         # GADM India boundaries shapefile
+boundaries_subdist =    os.path.join(datafolder, 'boundaries', 'gadm41_IND_3.shp')                          # GADM India boundaries shapefile
+locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_LocationDirectory.csv')         # State and district names and codes from Census
+pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_{scale}_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
+cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_karnataka_cropland_{scale}.tif') # DynamicWorld extracted from GEE
 
 
 # Census statistics 
@@ -39,11 +58,7 @@ agworkers_29 =          os.path.join(datafolder, 'census', 'CensusIndia2011_Indu
 # GHSL component files
 # Selected files cover India 
 # creates a list containing all the files in folder that match criteria
-# ********
-# TODO: Specify desired GHSL folder (depending on product, scale, projection). Comment out alternatives. 
-ghslfolder = os.path.join(datafolder, 'ghsl', 'smod_e2030_1000')     #GHSL Settlement Model Grid,    R2023, Epoch 2030, 1km,     Mollweide
-# ghslfolder = os.path.join(datafolder, 'ghsl', 'built_E2030_100')   #GHSL Built-up Surface,         R2023, Epoch 2030, 100m,    Mollweide
-# ********
+ghslfolder = os.path.join(datafolder, 'ghsl', ghsl_model)     
 ghsl_to_merge = glob.glob(os.path.join(ghslfolder, '*.tif'))    
 
 
@@ -55,9 +70,14 @@ ghsl_poly =             os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghs
 ghsl_poly_fixed =       os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_vector_fixed.shp')  # Shapefile with fixed geometries
 ghsl_india_clipped =    os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_vector_clipped.shp')
 
-state_29_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', 'state_29.shp')
+state_29_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', 'state_29.shp')         # Specific to Karnataka, for test run through
 districts_29_filepath = os.path.join(outputfolder, 'intermediates', 'boundaries_district', 'districts_29.shp')
 ghsl_29_clipped =       os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_29_clipped.tif')
+
+cropland_poly =             os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector.shp')
+cropland_poly_fixed =       os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_fixed.shp')
+cropland_poly_clipped =     os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_clipped.shp')
+cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_dissolved.shp')
 
 
 
