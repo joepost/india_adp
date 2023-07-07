@@ -78,6 +78,8 @@ cropland_poly_fixed =       os.path.join(outputfolder, 'intermediates', 'dynamic
 cropland_poly_clipped =     os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_clipped.shp')
 cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_dissolved.shp')
 
+pop_points =            os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.shp')
+
 
 
 # Output files

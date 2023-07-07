@@ -30,6 +30,7 @@ print('Packages imported.\n')
 
 # ==================================================================================================================
 # 2. QGIS PROCESSES: GHSL
+#   Final output: ghsl_india_clipped
 
 # 2.1 Merge GHSL inputs into single raster covering all of India
 print('Merging GHSL input layers...\n')
@@ -116,6 +117,7 @@ print('GHSL poly layer clipped.\n')
 
 # ==================================================================================================================
 # 3. QGIS PROCESSES: Agricultural Lands (Dynamic World)
+#   Final output: cropland_poly_dissolved
 
 
 # 3.1 Vectorise DW croplands layer
@@ -129,3 +131,48 @@ processing.run('gdal:polygonize',
                     'OUTPUT': cropland_poly})
 print('DW croplands layer vectorised.\n')
 
+
+# 3.2 Fix geometries on new polygon
+print('Fixing geometries of DW croplands poly layer...\n')
+processing.run('native:fixgeometries',
+                   {'INPUT': cropland_poly,
+                    'OUTPUT': cropland_poly_fixed})
+print('Geometries of DW croplands poly layer fixed.\n')
+
+
+# 3.3 Clip the shape to India state boundaries
+print('Clipping DW croplands poly layer...\n')
+processing.run('native:clip',
+                   {'INPUT': cropland_poly_fixed,
+                    'OVERLAY': districts_29_filepath,    #boundaries_state,
+                    'OUTPUT': cropland_poly_clipped})
+print('GHSL poly layer clipped.\n')
+
+
+# 3.4 Dissolve the vector into a single feature
+print('Dissolving DW croplands poly layer into single feature...\n')
+processing.run('native:dissolve',
+                   {'INPUT': cropland_poly_clipped,
+                    'FIELD': 'cropland_b',
+                    'OUTPUT': cropland_poly_dissolved})
+print('DW croplands poly layer dissolved.\n')
+
+
+# 3.5 Create spatial index
+#       Confirm with FL the purpose of this; speed up processing? 
+processing.run('native:createspatialindex',
+                   {'INPUT': cropland_poly_dissolved})
+
+
+
+# ==================================================================================================================
+# 4. QGIS PROCESSES: WorldPop
+#   Final output: 
+
+# 4.1 Create the point shape file of population from the Worldpop raster input
+if not os.path.isfile(pop_points):
+    processing.run('native:pixelstopoints',
+                   {'INPUT_RASTER': pop_tif,
+                    'RASTER_BAND': 1,
+                    'FIELD_NAME': 'pop_count',
+                    'OUTPUT': pop_points})

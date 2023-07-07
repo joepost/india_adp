@@ -20,5 +20,4 @@ downloads/
 
 # Exclude 'data' directory
 Data/
-Output/final/*
-Output/intermediates/*
+Output/
