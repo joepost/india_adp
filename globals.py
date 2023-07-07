@@ -16,13 +16,14 @@ import glob
 # ********************************************
 # TODO: 
 # 1. Set directory depending on user
-repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
+repository = os.getcwd() #'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
 
 # 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
 scale = '1km'
 # scale = '100m'
 
 # 3. Set flag for working with single state or whole of India
+# [TO BE DONE]
 
 # 4. Set desired GHSL model to be used
 ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch 2030, 1km,     Mollweide
@@ -36,6 +37,10 @@ worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation,
 # Working directories
 datafolder = os.path.join(repository,'Data')
 outputfolder = os.path.join(repository,'Output')
+
+# Subfolders list
+data_subfolders = ['boundaries', 'census', 'dynamicworld', 'ghsl', 'worldpop']
+output_subfolders = ['boundaries_district', 'boundaries_state', 'dynamicworld', 'ghsl', 'worldpop']
 
 
 # Input files

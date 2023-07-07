@@ -26,6 +26,23 @@ print('Packages imported.\n')
 
 
 # ==================================================================================================================
+# 1. CREATE REQUIRED SUBFOLDERS
+
+for path in data_subfolders:
+    subfolderpath = os.path.join(datafolder, path)
+    if not os.path.exists(subfolderpath):
+        print(f"Creating folder {subfolderpath}")
+        os.makedirs(subfolderpath)
+
+for path in output_subfolders:
+    subfolderpath = os.path.join(outputfolder, 'intermediates', path)
+    if not os.path.exists(subfolderpath):
+        print(f"Creating folder {subfolderpath}")
+        os.makedirs(subfolderpath)
+
+
+
+# ==================================================================================================================
 # 2. LOAD AND CLEAN DATA
 
 loc_codes = pd.read_csv(locationcodes)
