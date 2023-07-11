@@ -86,7 +86,7 @@ cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamic
 
 pop_points =            os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.shp')
 pop_points_clipped =    os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_clipped.shp')
-
+pop_points_ghsl_shp =   os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_ghsl_shp.shp')  # joined shapefile of WorldPop + GHSL
 
 
 # Output files

@@ -191,3 +191,39 @@ print('WorldPop points layer clipped.\n')
 
 # Possible to switch at this point to internal python processing?
 # i.e. using geopandas functions to perform joins and transformations 
+
+# **********************
+# NOTE: As of 2023-07-11, have switched to Script 02_pythonprocesses.py from this point onward
+# **********************
+
+# The below function errors out for Sri Lanka script; TO BE TESTED
+# 5.1 Join WorldPop points to GHSL rural polygons
+print('Joining WorldPop points to GHSL rural polygons...\n')
+processing.run('native:joinattributesbylocation',
+                   {'INPUT': pop_points_clipped,
+                    'JOIN': ghsl_india_clipped,
+                    'PREDICATE': [0,5],
+                    'JOIN_FIELDS': ['settlement'],
+                    'METHOD': 2,
+                    'DISCARD_NONMATCHING': False,
+                    'PREFIX': '',
+                    'OUTPUT': pop_points_ghsl_shp})
+print('WorldPop points layer joined to GHSL rural polygons.\n')
+
+
+# FROM SL SCRIPT:
+# This is the point switched from QGIS processes to python geodataframes 
+# *****************************************************
+# Import the dbf with geopandas
+pop_points_ghsl_df = gpd.read_file(pop_points_ghsl_qgis_dbf)
+
+# Create a filtered df and just keep the rural points (11, 12, 13, 21)
+# Codes defined by GHSL; see GHSL metadata document for details
+rural_points_ghsl_df = pop_points_ghsl_df.loc[pop_points_ghsl_df['land_types'].isin([11, 12, 13, 21])]
+
+# Export the filtered rural population as a shp file
+rural_points_ghsl_df.to_file(rur_points_shp, driver='ESRI Shapefile')
+# *****************************************************
+
+
+
