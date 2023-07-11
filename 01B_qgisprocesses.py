@@ -30,7 +30,7 @@ print('Packages imported.\n')
 
 # ==================================================================================================================
 # 2. QGIS PROCESSES: GHSL
-#   Final output: ghsl_india_clipped
+#   Final output: ghsl_india_clipped (ghsl_india_vector_clipped.shp)
 
 # 2.1 Merge GHSL inputs into single raster covering all of India
 print('Merging GHSL input layers...\n')
@@ -117,7 +117,7 @@ print('GHSL poly layer clipped.\n')
 
 # ==================================================================================================================
 # 3. QGIS PROCESSES: Agricultural Lands (Dynamic World)
-#   Final output: cropland_poly_dissolved
+#   Final output: cropland_poly_dissolved (cropland_vector_dissolved.shp)
 
 
 # 3.1 Vectorise DW croplands layer
@@ -167,7 +167,7 @@ processing.run('native:createspatialindex',
 
 # ==================================================================================================================
 # 4. QGIS PROCESSES: WorldPop
-#   Final output: pop_points_clipped
+#   Final output: pop_points (pop_points.shp)
 
 # 4.1 Create the point shape file of population from the Worldpop raster input
 processing.run('native:pixelstopoints',
@@ -177,13 +177,14 @@ processing.run('native:pixelstopoints',
                     'OUTPUT': pop_points})
     
 
-# 4.2 Clip the shape to India state boundaries
-print('Clipping WorldPop points layer...\n')
-processing.run('native:clip',
-                   {'INPUT': pop_points,
-                    'OVERLAY': districts_29_filepath,    #boundaries_state,
-                    'OUTPUT': pop_points_clipped})
-print('WorldPop points layer clipped.\n')
+# # 4.2 Clip the shape to India state boundaries
+# print('Clipping WorldPop points layer...\n')
+# processing.run('native:clip',
+#                    {'INPUT': pop_points,
+#                     'OVERLAY': districts_29_filepath,    #boundaries_state,
+#                     'OUTPUT': pop_points_clipped})
+# print('WorldPop points layer clipped.\n')
+# ^^^^^^^^ REMOVE; can be done in Script 02
 
 
 # ==================================================================================================================
