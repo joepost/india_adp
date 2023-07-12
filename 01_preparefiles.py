@@ -65,14 +65,16 @@ district_codes.head(10)
 # Read in shapefile
 states = gpd.read_file(boundaries_state)
 districts = gpd.read_file(boundaries_district)
-
+districts = districts.astype({'pc11_s_id':'int64',
+                              'pc11_d_id':'int64'})
 
 # ******************************
 # TODO: The code in this bracket is specified to Karnataka, as part of the test run. This will need to updated for the whole India approach. 
 
 # Create shapefile specific to Karnataka
 state_29 = states[states["NAME_1"]=="Karnataka"]
-districts_29 = districts[districts["NAME_1"]=="Karnataka"]
+# districts_29 = districts[districts["NAME_1"]=="Karnataka"]
+districts_29 = districts[districts['pc11_s_id']==29]          # 2023-07-12 Have changed input file to SHRUG source. Includes census coding, unlike GADM. 
 
 # Export Karnataka shapefiles
 state_29.to_file(state_29_filepath, mode="w")
@@ -80,11 +82,18 @@ districts_29.to_file(districts_29_filepath, mode="w")
 
 # ******************************
 
-# plot the map
-fig, ax = plt.subplots() 
-state_29.plot(ax = ax, color='green').set_axis_off()
-# plt.show()      # use 'show' to bring up a viz window
+# Read in the census population data
+census_data = pd.read_csv(agworkers)
+census_data.columns
 
-# fig, ax = plt.subplots()              ## NOT VISUALISING CORRETLY; WHY?
-# districts_29.plot(ax = ax, color='bue').set_axis_off()
-# plt.show()     
+# Calculate ADP
+census_data["crop_labourers"] = census_data["Cultivators P"] + census_data["Agricultural labourers P"]
+census_data["all_primary_sector"] = census_data["Cultivators P"] + census_data["Agricultural labourers P"] + census_data["Primary sector other P"]
+census_data_cln = census_data[census_data['Age group'] == 'Total']
+ag_workers = census_data_cln[['State code', 'District code', 'Area name', 'Total Rural Urban',
+                             'crop_labourers', 'all_primary_sector']]
+
+ag_workers
+
+# Export cleaned census data
+ag_workers.to_csv(agworkers_filepath, mode="w", index=False)

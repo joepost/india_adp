@@ -41,13 +41,14 @@ outputfolder = os.path.join(repository,'Output')
 
 # Subfolders list
 data_subfolders = ['boundaries', 'census', 'dynamicworld', 'ghsl', 'worldpop']
-output_subfolders = ['boundaries_district', 'boundaries_state', 'dynamicworld', 'ghsl', 'worldpop']
+output_subfolders = ['boundaries_district', 'boundaries_state', 'census', 'dynamicworld', 'ghsl', 'worldpop']
 
 
 # Input files
 boundaries_national =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_0.shp')                          # GADM India boundaries shapefile
 boundaries_state =      os.path.join(datafolder, 'boundaries', 'gadm41_IND_1.shp')                          # GADM India boundaries shapefile
-boundaries_district =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_2.shp' )                         # GADM India boundaries shapefile
+# boundaries_district =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_2.shp' )                         # GADM India boundaries shapefile
+boundaries_district =   os.path.join(datafolder, 'boundaries', 'district.shp' )                         # GADM India boundaries shapefile
 boundaries_subdist =    os.path.join(datafolder, 'boundaries', 'gadm41_IND_3.shp')                          # GADM India boundaries shapefile
 locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_LocationDirectory.csv')         # State and district names and codes from Census
 pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_{scale}_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
@@ -57,7 +58,8 @@ cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_karna
 # Census statistics 
 # Currently, this file loads just the data for the test state Karnataka (State Code 29).
 # The file has been cleaned from the website download into a readable csv table.
-agworkers_29 =          os.path.join(datafolder, 'census', 'CensusIndia2011_IndustrialCategory_Karnataka_DDW-B04-2900_cln.csv')
+agworkers =         os.path.join(datafolder, 'census', 'CensusIndia2011_IndustrialCategory_Karnataka_DDW-B04-2900_cln.csv')
+census_population = os.path.join(datafolder, 'census', 'CensusIndia2011_A-1_Population_cln.csv')
 
 
 # GHSL component files
@@ -79,15 +81,29 @@ state_29_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_
 districts_29_filepath = os.path.join(outputfolder, 'intermediates', 'boundaries_district', 'districts_29.shp')
 ghsl_29_clipped =       os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_29_clipped.tif')
 
+agworkers_filepath =        os.path.join(outputfolder, 'intermediates', 'census', 'agworkers.csv')
+agworkers_jn_filepath =     os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn.shp')
+agworkers_jn_filepath_t =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_t.shp')
+agworkers_jn_filepath_r =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_r.shp')
+agworkers_jn_filepath_u =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_u.shp')
+
+census_jn_filepath =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn.shp')
+census_jn_filepath_t =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_t.shp')
+census_jn_filepath_r =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_r.shp')
+census_jn_filepath_u =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_u.shp')
+
 cropland_poly =             os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector.shp')
 cropland_poly_fixed =       os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_fixed.shp')
 cropland_poly_clipped =     os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_clipped.shp')
 cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_dissolved.shp')
 
-pop_points =            os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.shp')
-pop_points_clipped =    os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_clipped.shp')
-pop_joined_ghsl =       os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_ghsl_shp.shp')  # joined shapefile of WorldPop + GHSL
-pop_points_rural_path = os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_rural.shp')
+pop_points =                os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.shp')
+pop_points_clipped =        os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_clipped.shp')
+pop_joined_ghsl =           os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_ghsl_shp.shp')  # joined shapefile of WorldPop + GHSL
+pop_points_rural_path =     os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_rural.shp')
+pop_points_cropland_path =  os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_cropland.shp')
+pop_jn_district_path =      os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_jn_district.shp')
+rupop_jn_district_path =    os.path.join(outputfolder, 'intermediates', 'worldpop', 'rupop_jn_district.shp')
 
 
 # Output files
