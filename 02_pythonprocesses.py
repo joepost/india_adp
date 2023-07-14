@@ -123,13 +123,20 @@ if not os.path.isfile(agworkers_jn_filepath):
 # ===========
 # 3.2 Join WorldPop points to district boundaries
 
+#*******
+# NOTE:ISSUE (live 2023-07-12)
+# Dissolve process producing the same output for all worldpop products (total, rural, and cropland)
+# Inputs appear to succesfully crop unwanted points - need to troubleshoot source of issue
+#*******
+
 # This joins the attributes of the points to the polygons they fall within
 pop_jn_districts = gdf_pop.sjoin(districts_29, how = 'inner')
 
 # Dissolve points to calculate aggregated population for district
 dissolve_df = pop_jn_districts[['pop_count', 'geometry', 'pc11_d_id', 'd_name']]
-sum_pop_districts = dissolve_df.dissolve(by = 'pc11_d_id', aggfunc={'pop_count':'sum',
-                                                                    'd_name':'first'})
+sum_pop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, aggfunc={'pop_count':'sum',
+                                                                                    'd_name':'first'})
+sum_pop_districts['pop_count'] = sum_pop_districts['pop_count'].round()         # remove unnecessary decimals
 
 # Export the filtered rural population as a shp file
 if not os.path.isfile(pop_jn_district_path):
@@ -145,8 +152,9 @@ rupop_jn_districts = pop_points_rural.sjoin(districts_29, how = 'inner')
 
 # Dissolve points to calculate aggregated population for district
 dissolve_df = rupop_jn_districts[['pop_count', 'geometry', 'pc11_d_id', 'd_name']]
-sum_rupop_districts = dissolve_df.dissolve(by = 'pc11_d_id', aggfunc={'pop_count':'sum',
-                                                                    'd_name':'first'})
+sum_rupop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, aggfunc={'pop_count':'sum',
+                                                                                      'd_name':'first'})
+sum_rupop_districts['pop_count'] = sum_rupop_districts['pop_count'].round()
 
 # Export the filtered rural population as a shp file
 if not os.path.isfile(rupop_jn_district_path):
@@ -158,17 +166,18 @@ if not os.path.isfile(rupop_jn_district_path):
 # 3.4 Join WorldPop CROPLAND points to district boundaries
 
 # This joins the attributes of the points to the polygons they fall within
-croppop_jn_districts = pop_points_cropland.sjoin(districts_29, how = 'inner')
+crpop_jn_districts = pop_points_cropland.sjoin(districts_29, how = 'inner')
 
 # Dissolve points to calculate aggregated population for district
-dissolve_df = rupop_jn_districts[['pop_count', 'geometry', 'pc11_d_id', 'd_name']]
-sum_rupop_districts = dissolve_df.dissolve(by = 'pc11_d_id', aggfunc={'pop_count':'sum',
-                                                                    'd_name':'first'})
+dissolve_df = crpop_jn_districts[['pop_count', 'geometry', 'pc11_d_id', 'd_name']]
+sum_crpop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, aggfunc={'pop_count':'sum',
+                                                                                      'd_name':'first'})
+sum_crpop_districts['pop_count'] = sum_crpop_districts['pop_count'].round()
 
 # Export the filtered rural population as a shp file
-if not os.path.isfile(rupop_jn_district_path):
-    sum_rupop_districts.to_file(rupop_jn_district_path, driver='ESRI Shapefile')
-    print('Rural pop points joined to district boundaries and exported to shapefile.\n')
+if not os.path.isfile(crpop_jn_district_path):
+    sum_crpop_districts.to_file(crpop_jn_district_path, driver='ESRI Shapefile')
+    print('Cropland pop points joined to district boundaries and exported to shapefile.\n')
 
 
 # ===========
@@ -200,3 +209,34 @@ if not os.path.isfile(census_jn_filepath):
     census_pop_jn_urban.to_file(census_jn_filepath_u, driver='ESRI Shapefile')
     print('Census data by district boundary exported to shapefile.\n')
 
+
+# ==================================================================================================================
+# 4. COLLATE OUTPUT INTO SINGLE GEODATAFRAME
+
+# Input files:
+#   1. Census population counts by district
+#   2. Census agricultural workers by district  >>> use combo of first 2 to calculate Ag Workers Density (per km2)
+#   3. WorldPop (all points) aggregated count by district
+#   4. WorldPop (rural points) aggregated count by district
+#   5. WorldPop (cropland points) aggregated count by district
+
+masterdf = census_pop_jn_total[['pc11_s_id', 'pc11_d_id', 'd_name', 'geometry', 'State  Code',
+                                'Population', 'Area sq km', 'Population per sq km']]
+
+join_agworkers = ag_workers_jn_total[['pc11_d_id','crop_labourers', 'all_primary_sector']]
+masterdf = masterdf.merge(join_agworkers, how='left', on=['pc11_d_id'])
+
+join_worldpop_all = sum_pop_districts[['pc11_d_id', 'pop_count']]
+join_worldpop_all = join_worldpop_all.rename(columns={'pop_count':'worldpop'})
+masterdf = masterdf.merge(join_worldpop_all, how='left', on=['pc11_d_id'])
+
+join_worldpop_rural = sum_rupop_districts[['pc11_d_id', 'pop_count']]
+join_worldpop_rural = join_worldpop_rural.rename(columns={'pop_count':'worldpop_rural'})
+masterdf = masterdf.merge(join_worldpop_rural, how='left', on=['pc11_d_id'])
+
+join_worldpop_crop = sum_crpop_districts[['pc11_d_id', 'pop_count']]
+join_worldpop_crop = join_worldpop_crop.rename(columns={'pop_count':'worldpop_crop'})
+masterdf = masterdf.merge(join_worldpop_crop, how='left', on=['pc11_d_id'])
+
+masterdf.columns
+masterdf.head()

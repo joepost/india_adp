@@ -82,7 +82,7 @@ districts_29.to_file(districts_29_filepath, mode="w")
 
 # ******************************
 
-# Read in the census population data
+# Read in the census data
 census_data = pd.read_csv(agworkers)
 census_data.columns
 

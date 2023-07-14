@@ -104,6 +104,7 @@ pop_points_rural_path =     os.path.join(outputfolder, 'intermediates', 'worldpo
 pop_points_cropland_path =  os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_cropland.shp')
 pop_jn_district_path =      os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_jn_district.shp')
 rupop_jn_district_path =    os.path.join(outputfolder, 'intermediates', 'worldpop', 'rupop_jn_district.shp')
+crpop_jn_district_path =    os.path.join(outputfolder, 'intermediates', 'worldpop', 'crpop_jn_district.shp')
 
 
 # Output files
