@@ -130,7 +130,7 @@ if not os.path.isfile(agworkers_jn_filepath):
 #*******
 
 # This joins the attributes of the points to the polygons they fall within
-pop_jn_districts = gdf_pop.sjoin(districts_29, how = 'inner')
+pop_jn_districts = gdf_pop.sjoin(districts_29, how = 'right')
 
 # Dissolve points to calculate aggregated population for district
 dissolve_df = pop_jn_districts[['pop_count', 'geometry', 'pc11_d_id', 'd_name']]
@@ -148,7 +148,8 @@ if not os.path.isfile(pop_jn_district_path):
 # 3.3 Join WorldPop RURAL points to district boundaries
 
 # This joins the attributes of the points to the polygons they fall within
-rupop_jn_districts = pop_points_rural.sjoin(districts_29, how = 'inner')
+# Use a RIGHT join to ensure that all the districts are included in output (even if they have no rural population)
+rupop_jn_districts = pop_points_rural.sjoin(districts_29, how = 'right')
 
 # Dissolve points to calculate aggregated population for district
 dissolve_df = rupop_jn_districts[['pop_count', 'geometry', 'pc11_d_id', 'd_name']]
@@ -166,7 +167,7 @@ if not os.path.isfile(rupop_jn_district_path):
 # 3.4 Join WorldPop CROPLAND points to district boundaries
 
 # This joins the attributes of the points to the polygons they fall within
-crpop_jn_districts = pop_points_cropland.sjoin(districts_29, how = 'inner')
+crpop_jn_districts = pop_points_cropland.sjoin(districts_29, how = 'right')
 
 # Dissolve points to calculate aggregated population for district
 dissolve_df = crpop_jn_districts[['pop_count', 'geometry', 'pc11_d_id', 'd_name']]

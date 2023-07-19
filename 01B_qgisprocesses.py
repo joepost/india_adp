@@ -169,15 +169,31 @@ processing.run('native:createspatialindex',
 # 4. QGIS PROCESSES: WorldPop
 #   Final output: pop_points (pop_points.shp)
 
+
+# ALTERNATIVE (added 2023-07-19): 
+# 4.0 clip the boundaries of worldpop to state FIRST, and then generate point dataset
+#   Reduces the processing load for following steps 
+print('Clipping WorldPop raster layer to KARNATAKA district boundaries...\n')
+processing.run('gdal:cliprasterbymasklayer',
+                   {'INPUT': pop_tif,     # raster to clip
+                    'MASK': districts_29_filepath,  # vector mask of desired boundaries
+                    'SOURCE_CRS': QgsCoordinateReferenceSystem('EPSG:4326'),
+                    'TARGET_CRS': QgsCoordinateReferenceSystem('EPSG:4326'),
+                    'KEEP_RESOLUTION': True,
+                    'OUTPUT': pop_tif_clipped})
+print('GHSL raster layer clipped.\n')
+
 # 4.1 Create the point shape file of population from the Worldpop raster input
 processing.run('native:pixelstopoints',
-                   {'INPUT_RASTER': pop_tif,
+                   {'INPUT_RASTER': pop_tif_clipped,
                     'RASTER_BAND': 1,
                     'FIELD_NAME': 'pop_count',
                     'OUTPUT': pop_points})
     
 
-# # 4.2 Clip the shape to India state boundaries
+# 4.2 Clip the shape to India state boundaries
+#  NOTE: Continues to ERROR OUT; not sure reason. Can successfully be replaced by geopandas functions?
+#       Valid as of 2023-07-19
 # print('Clipping WorldPop points layer...\n')
 # processing.run('native:clip',
 #                    {'INPUT': pop_points,
