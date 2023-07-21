@@ -12,6 +12,7 @@
 
 import os
 import glob
+import time
 
 # ********************************************
 # TODO: 
@@ -110,5 +111,14 @@ crpop_jn_district_path =    os.path.join(outputfolder, 'intermediates', 'worldpo
 
 # Output files
 # These file paths store the final output files used in the Results section
+
+
+# ==================================================================================================================
+# FUNCTIONS
+
+def timestamp(initial_time):
+    end_time = time.time()
+    elapsed_time = end_time - initial_time
+    print('Elapsed time: ', round(elapsed_time, 1), ' seconds.')
 
 
