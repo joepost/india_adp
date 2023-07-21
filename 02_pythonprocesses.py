@@ -40,7 +40,6 @@ start_time = time.time()
 gdf_pop = gpd.read_file(pop_points)
 gdf_crops = gpd.read_file(cropland_poly_dissolved)
 gdf_ghsl = gpd.read_file(ghsl_india_clipped)
-
     
 districts_29 = gpd.read_file(districts_29_filepath)
 
@@ -113,9 +112,9 @@ ag_workers_jn.head()
 
 # Split into urban/rural/total
 # NOTE: Need to decide whether the urban/rural/total census split is relevant, or just to select one (Unresolved as of 2023-07-12)
-ag_workers_jn_total = ag_workers_jn[ag_workers_jn['Total Rural Urban'] == 'Total']
-ag_workers_jn_rural = ag_workers_jn[ag_workers_jn['Total Rural Urban'] == 'Rural']
-ag_workers_jn_urban = ag_workers_jn[ag_workers_jn['Total Rural Urban'] == 'Urban']
+# ag_workers_jn_total = ag_workers_jn[ag_workers_jn['Total Rural Urban'] == 'Total']
+# ag_workers_jn_rural = ag_workers_jn[ag_workers_jn['Total Rural Urban'] == 'Rural']
+# ag_workers_jn_urban = ag_workers_jn[ag_workers_jn['Total Rural Urban'] == 'Urban']
 
 # ****TODO: Create function for this split action ^^^ above? -> Currently occurs TWICE in code
 
@@ -129,23 +128,12 @@ ag_workers_jn_urban = ag_workers_jn[ag_workers_jn['Total Rural Urban'] == 'Urban
 #     print('Census data by district boundary exported to shapefile.\n')
 
 print('Census ADP counts joined to district boundaries.\n')
-
 timestamp(time_31s)
 
 
 # ===========
 # 3.2 Join WorldPop points to district boundaries
 time_32s = time.time()
-
-#*******
-# NOTE:ISSUE (live 2023-07-12)
-# Dissolve process producing the same output for all worldpop products (total, rural, and cropland)
-# Inputs appear to succesfully crop unwanted points - need to troubleshoot source of issue
-
-
-# TEST APPROACH:
-# Open output of right join in QGIS to investigate structure (pop_jn_districts OR rupop_jn_districts)
-#*******
 
 # This joins the attributes of the points to the polygons they fall within
 pop_jn_districts = gdf_pop.sjoin(districts_29, how = 'inner')
@@ -157,10 +145,11 @@ sum_pop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, aggfu
 sum_pop_districts['pop_count'] = sum_pop_districts['pop_count'].round()         # remove unnecessary decimals
 
 # Export the filtered rural population as a shp file
-if os.path.isfile(pop_jn_district_path):
-    sum_pop_districts.to_file(pop_jn_district_path, driver='ESRI Shapefile')
-    print('Pop points joined to district boundaries and exported to shapefile.\n')
+# if not os.path.isfile(pop_jn_district_path):
+#     sum_pop_districts.to_file(pop_jn_district_path, driver='ESRI Shapefile')
+#     print('Pop points joined to district boundaries and exported to shapefile.\n')
 
+print('Pop points joined to district boundaries.\n')
 timestamp(time_32s)
 
 # ===========
@@ -168,7 +157,6 @@ timestamp(time_32s)
 time_33s = time.time()
 
 # This joins the attributes of the points to the polygons they fall within
-# Use a RIGHT join to ensure that all the districts are included in output (even if they have no rural population)
 rupop_jn_districts = pop_points_rural.sjoin(districts_29, how = 'inner')
 
 # Dissolve points to calculate aggregated population for district
@@ -178,10 +166,11 @@ sum_rupop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, agg
 sum_rupop_districts['pop_count'] = sum_rupop_districts['pop_count'].round()
 
 # Export the filtered rural population as a shp file
-if os.path.isfile(rupop_jn_district_path):
-    sum_rupop_districts.to_file(rupop_jn_district_path, driver='ESRI Shapefile')
-    print('Rural pop points joined to district boundaries and exported to shapefile.\n')
+# if not os.path.isfile(rupop_jn_district_path):
+#     sum_rupop_districts.to_file(rupop_jn_district_path, driver='ESRI Shapefile')
+#     print('Rural pop points joined to district boundaries and exported to shapefile.\n')
 
+print('Rural pop points joined to district boundaries.\n')
 timestamp(time_33s)
 
 # ===========
@@ -198,10 +187,11 @@ sum_crpop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, agg
 sum_crpop_districts['pop_count'] = sum_crpop_districts['pop_count'].round()
 
 # Export the filtered rural population as a shp file
-if os.path.isfile(crpop_jn_district_path):
-    sum_crpop_districts.to_file(crpop_jn_district_path, driver='ESRI Shapefile')
-    print('Cropland pop points joined to district boundaries and exported to shapefile.\n')
+# if os.path.isfile(crpop_jn_district_path):
+#     sum_crpop_districts.to_file(crpop_jn_district_path, driver='ESRI Shapefile')
+#     print('Cropland pop points joined to district boundaries and exported to shapefile.\n')
 
+print('Cropland pop points joined to district boundaries.\n')
 timestamp(time_34s)
 
 # ===========
@@ -212,19 +202,21 @@ time_35s = time.time()
 #   This can give an indication of the existing margin of error in the methodology, before bringing further uncertainty through the cropland masking process. 
 
 # Read in census population (total, urban, rural)
-census_pop = pd.read_csv(census_population)
-census_pop = census_pop[['State  Code', 'District Code', 'Region', 'Name', 'Total Rural Urban',
-       'Population', 'Area sq km', 'Population per sq km']]
-census_pop = census_pop.astype({'Population':'int64'},
-                               {'Population per sq km':'float64'})
+# NOTE: MOVED THIS SECTION TO SCRIPT 01
+# census_pop = pd.read_csv(census_population)
+# census_pop = census_pop[['State  Code', 'District Code', 'Region', 'Name', 'Total Rural Urban',
+#        'Population', 'Area sq km', 'Population per sq km']]
+# census_pop = census_pop.astype({'Population':'int64'},
+#                                {'Population per sq km':'float64'})
 
 census_pop_jn = districts_29.merge(census_pop, how='left', left_on='pc11_d_id', right_on='District Code', sort=True)
+census_pop_jn = census_pop_jn[census_pop_jn['Total Rural Urban']=='Total']
 
 # Split into urban/rural/total
 # NOTE: Need to decide whether the urban/rural/total census split is relevant, or just to select one (Unresolved as of 2023-07-12)
-census_pop_jn_total = census_pop_jn[census_pop_jn['Total Rural Urban'] == 'Total']
-census_pop_jn_rural = census_pop_jn[census_pop_jn['Total Rural Urban'] == 'Rural']
-census_pop_jn_urban = census_pop_jn[census_pop_jn['Total Rural Urban'] == 'Urban']
+# census_pop_jn_total = census_pop_jn[census_pop_jn['Total Rural Urban'] == 'Total']
+# census_pop_jn_rural = census_pop_jn[census_pop_jn['Total Rural Urban'] == 'Rural']
+# census_pop_jn_urban = census_pop_jn[census_pop_jn['Total Rural Urban'] == 'Urban']
 
 # Export the joined census total population and district boundaries as a shp file
 # if not os.path.isfile(census_jn_filepath):
@@ -249,10 +241,10 @@ time_40s = time.time()
 #   4. WorldPop (rural points) aggregated count by district
 #   5. WorldPop (cropland points) aggregated count by district
 
-masterdf = census_pop_jn_total[['pc11_s_id', 'pc11_d_id', 'd_name', 'geometry', 'State  Code',
+masterdf = census_pop_jn[['pc11_s_id', 'pc11_d_id', 'd_name', 'geometry', 'State  Code',
                                 'Population', 'Area sq km', 'Population per sq km']]
 
-join_agworkers = ag_workers_jn_total[['pc11_d_id','crop_labourers', 'all_primary_sector']]
+join_agworkers = ag_workers_jn[['pc11_d_id','crop_labourers', 'all_primary_sector']]
 masterdf = masterdf.merge(join_agworkers, how='left', on=['pc11_d_id'])
 
 join_worldpop_all = sum_pop_districts[['pc11_d_id', 'pop_count']]
@@ -267,8 +259,17 @@ join_worldpop_crop = sum_crpop_districts[['pc11_d_id', 'pop_count']]
 join_worldpop_crop = join_worldpop_crop.rename(columns={'pop_count':'worldpop_crop'})
 masterdf = masterdf.merge(join_worldpop_crop, how='left', on=['pc11_d_id'])
 
+# Calculate difference between Census ADP and Worldpop cropland calculation
+masterdf['adp_difference'] = masterdf['crop_labourers'] - masterdf['worldpop_crop']
+masterdf['adp_diff_pc'] = round(masterdf['adp_difference']/masterdf['crop_labourers']*100,2)
+
+masterdf.drop(columns='geometry', inplace=True)
+
 masterdf.columns
 masterdf.head()
+
+# Export masterdf to csv
+masterdf.to_csv(masterdf_path, index=False)
 
 timestamp(time_40s)
 

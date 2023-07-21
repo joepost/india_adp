@@ -2,7 +2,7 @@
 
 # DISSERTATION
 # SECTION 01: Prepare Files
-# Date: 2023-06-19
+# Date created: 2023-06-19
 # Author: J Post
 
 # ==================================================================================================================
@@ -82,16 +82,75 @@ districts_29.to_file(districts_29_filepath, mode="w")
 
 # ******************************
 
-# Read in the census data
-census_data = pd.read_csv(agworkers)
-census_data.columns
 
-# Calculate ADP
-census_data["crop_labourers"] = census_data["Cultivators P"] + census_data["Agricultural labourers P"]
-census_data["all_primary_sector"] = census_data["Cultivators P"] + census_data["Agricultural labourers P"] + census_data["Primary sector other P"]
-census_data_cln = census_data[census_data['Age group'] == 'Total']
-ag_workers = census_data_cln[['State code', 'District code', 'Area name', 'Total Rural Urban',
-                             'crop_labourers', 'all_primary_sector']]
+# Read in the census data
+census_ag_main =        pd.read_csv(agworkers_main)
+census_ag_marginal =    pd.read_csv(agworkers_marginal)
+census_pop =            pd.read_csv(census_population)
+
+
+# Filter Age, Rural/Urban status, and Gender
+ag_main_cln = census_ag_main[(census_ag_main['Age group'] == 'Total') & (census_ag_main['Total Rural Urban'] == 'Total')]
+ag_main_cln = ag_main_cln[['State code', 'District code', 'Area name',
+       'Total Rural Urban', 'Age group', 'Main workers P'
+    #    , 'Main workers M', 'Main workers F'
+    , 'Cultivators P'
+    # , 'Cultivators M', 'Cultivators F'
+    ,  'Agricultural labourers P'
+    # , 'Agricultural labourers M', 'Agricultural labourers F'
+    , 'Primary sector other P'
+    #   , 'Primary sector other M', 'Primary sector other F'
+       ]]
+ag_marginal_cln = census_ag_marginal[(census_ag_marginal['Age group'] == 'Total') & (census_ag_marginal['Total Rural Urban'] == 'Total')]
+ag_marginal_cln = ag_marginal_cln[['District code', 'marginal_6m_p'
+                                # , 'marginal_6m_m', 'marginal_6m_f' 
+                                  , 'marginal_3m_p'
+                                # , 'marginal_3m_m', 'marginal_3m_f'
+                                  , 'Cultivators P'
+                                # , 'Cultivators M', 'Cultivators F'
+                                  , 'Agricultural labourers P'
+                                # , 'Agricultural labourers M', 'Agricultural labourers F'
+                                  , 'Primary sector other P'
+                                # , 'Primary sector other M', 'Primary sector other F'
+                                ]]
+
+# Filter Total Population df
+census_pop_cln = census_pop[(census_pop['Total Rural Urban'] == 'Total') & (census_pop['State  Code'] > 0)]
+census_pop_cln = census_pop_cln[['District Code', 'Population', 'Area sq km', 'Population per sq km']]
+census_pop_cln.rename(columns={'District Code':'District code'}, inplace=True)
+census_pop_cln = census_pop_cln.astype({'Population':'int64'},
+                                       {'Population per sq km':'float64'})
+
+# Join marginal file to main
+ag_workers = ag_main_cln.merge(ag_marginal_cln, how='left', on='District code', suffixes=('_main','_marg'))
+
+# Join census population file to main
+ag_workers = ag_workers.merge(census_pop_cln, how='left', on='District code')
+
+
+
+
+
+# ==================================================================================================================
+# 3. CALCULATE ADP
+
+# Method 1: Main workers only (strict crops)
+ag_workers["ADP1"] = ag_workers["Cultivators P_main"] + ag_workers["Agricultural labourers P_main"]
+
+# Method 2: Main workers only (all primary sector)
+ag_workers["ADP2"] = ag_workers["Cultivators P_main"] + ag_workers["Agricultural labourers P_main"] + ag_workers["Primary sector other P_main"]
+
+# Method 3: Main + marginal workers (strict crops)
+ag_workers["ADP3"] = ag_workers["Cultivators P_main"] + ag_workers["Agricultural labourers P_main"] \
+    + ag_workers["Cultivators P_marg"] + ag_workers["Agricultural labourers P_marg"]
+
+# Method 4: Main + marginal workers (all primary sector)
+ag_workers["ADP4"] = ag_workers["Cultivators P_main"] + ag_workers["Agricultural labourers P_main"] + ag_workers["Primary sector other P_main"] \
+    + ag_workers["Cultivators P_marg"] + ag_workers["Agricultural labourers P_marg"] + ag_workers["Primary sector other P_marg"]
+
+# Method 5: Workers proportional to population ratio (based off Method 3)
+ag_workers["Total workers"] = ag_workers["Main workers P"] + ag_workers["marginal_6m_p"] + ag_workers["marginal_3m_p"]
+ag_workers["ADP5"] = ag_workers["ADP3"] * (ag_workers["Population"]/ag_workers["Total workers"])
 
 ag_workers
 
