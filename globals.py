@@ -38,7 +38,8 @@ worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation,
 
 # Working directories
 datafolder = os.path.join(repository,'Data')
-outputfolder = os.path.join(repository,'Output')
+outputfolder = os.path.join(repository,'Output','100m')
+    #   NOTE: 2023-07-23 OUTPUT DIRECTORY CHANGED TO 100m FOR TESTING OF OUTPUT ACCURACY AND RUNTIME
 
 # Subfolders list
 data_subfolders = ['boundaries', 'census', 'dynamicworld', 'ghsl', 'worldpop']
@@ -54,7 +55,7 @@ boundaries_subdist =    os.path.join(datafolder, 'boundaries', 'gadm41_IND_3.shp
 locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_LocationDirectory.csv')         # State and district names and codes from Census
 pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_{scale}_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
 # cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_karnataka_cropland_{scale}.tif') # DynamicWorld extracted from GEE
-cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_karnataka_cropland_100m.tif') # DynamicWorld extracted from GEE
+cropland =              os.path.join(datafolder, 'dynamicworld', '2020_dw_karnataka_cropland_100m.tif') # DynamicWorld extracted from GEE
 
 #**** NOTE: 2023-07-21 Manually changed cropland file to use 100m scale instead of 1km;
 #           Intention is to test runtime and results impact for this change, without added computation of 100m WorldPop
@@ -98,10 +99,11 @@ agworkers_filepath =        os.path.join(outputfolder, 'intermediates', 'census'
 # census_jn_filepath_r =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_r.shp')
 # census_jn_filepath_u =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_u.shp')
 
-cropland_poly =             os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector.shp')
-cropland_poly_fixed =       os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_fixed.shp')
-cropland_poly_clipped =     os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_clipped.shp')
-cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_dissolved.shp')
+# cropland_poly =             os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector.shp')
+cropland_poly =             os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector.gpkg')
+cropland_poly_fixed =       os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_fixed.gpkg')
+cropland_poly_clipped =     os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_clipped.gpkg')
+cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', 'cropland_vector_dissolved.gpkg')
 
 pop_tif_clipped =           os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_tif_clipped.tif')
 pop_points =                os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.shp')
