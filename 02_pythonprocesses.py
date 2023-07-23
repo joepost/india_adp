@@ -37,6 +37,8 @@ start_time = time.time()
 #   2. Landcover (cropland)
 #   3. GHSL rural polygons
 
+time_11s = time.time()
+
 gdf_pop = gpd.read_file(pop_points)
 gdf_crops = gpd.read_file(cropland_poly_dissolved)
 gdf_ghsl = gpd.read_file(ghsl_india_clipped)
@@ -44,6 +46,9 @@ gdf_ghsl = gpd.read_file(ghsl_india_clipped)
 districts_29 = gpd.read_file(districts_29_filepath)
 
 ag_workers = pd.read_csv(agworkers_filepath)
+
+print('Input data files loaded.\n')
+timestamp(time_11s)
 
 
 # ==================================================================================================================
@@ -209,8 +214,7 @@ time_35s = time.time()
 # census_pop = census_pop.astype({'Population':'int64'},
 #                                {'Population per sq km':'float64'})
 
-census_pop_jn = districts_29.merge(census_pop, how='left', left_on='pc11_d_id', right_on='District Code', sort=True)
-census_pop_jn = census_pop_jn[census_pop_jn['Total Rural Urban']=='Total']
+census_pop_jn = districts_29.merge(census_pop_cln, how='left', left_on='pc11_d_id', right_on='District code', sort=True)
 
 # Split into urban/rural/total
 # NOTE: Need to decide whether the urban/rural/total census split is relevant, or just to select one (Unresolved as of 2023-07-12)
@@ -227,12 +231,10 @@ census_pop_jn = census_pop_jn[census_pop_jn['Total Rural Urban']=='Total']
 #     print('Census data by district boundary exported to shapefile.\n')
 
 print('Census total population counts joined to district boundaries.\n')
-
 timestamp(time_35s)
 
 # ==================================================================================================================
 # 4. COLLATE OUTPUT INTO SINGLE GEODATAFRAME
-time_40s = time.time()
 
 # Input files:
 #   1. Census population counts by district
@@ -241,10 +243,10 @@ time_40s = time.time()
 #   4. WorldPop (rural points) aggregated count by district
 #   5. WorldPop (cropland points) aggregated count by district
 
-masterdf = census_pop_jn[['pc11_s_id', 'pc11_d_id', 'd_name', 'geometry', 'State  Code',
+masterdf = census_pop_jn[['pc11_s_id', 'pc11_d_id', 'd_name', 'geometry', 'District code',
                                 'Population', 'Area sq km', 'Population per sq km']]
 
-join_agworkers = ag_workers_jn[['pc11_d_id','crop_labourers', 'all_primary_sector']]
+join_agworkers = ag_workers_jn[['pc11_d_id', 'ADP1', 'ADP2', 'ADP3', 'ADP4', 'Total workers', 'ADP5']]
 masterdf = masterdf.merge(join_agworkers, how='left', on=['pc11_d_id'])
 
 join_worldpop_all = sum_pop_districts[['pc11_d_id', 'pop_count']]
@@ -259,9 +261,42 @@ join_worldpop_crop = sum_crpop_districts[['pc11_d_id', 'pop_count']]
 join_worldpop_crop = join_worldpop_crop.rename(columns={'pop_count':'worldpop_crop'})
 masterdf = masterdf.merge(join_worldpop_crop, how='left', on=['pc11_d_id'])
 
-# Calculate difference between Census ADP and Worldpop cropland calculation
-masterdf['adp_difference'] = masterdf['crop_labourers'] - masterdf['worldpop_crop']
-masterdf['adp_diff_pc'] = round(masterdf['adp_difference']/masterdf['crop_labourers']*100,2)
+
+# ==================================================================================================================
+# 5. CALCULATE DIFFERENCE IN POPULATION ESTIMATES
+
+# Columns to compute:
+#   0. Difference between Worldpop total population and Census total population 
+#   1. Difference between Worldpop cropland population and ADP1
+#   2. Difference between Worldpop cropland population and ADP2
+#   3. Difference between Worldpop cropland population and ADP3
+#   4. Difference between Worldpop cropland population and ADP4
+#   5. Difference between Worldpop cropland population and ADP5
+
+# Calculate difference between Worldpop total population and Census total population
+masterdf['d0_poptotals'] = masterdf['worldpop'] - masterdf['Population']
+masterdf['d0_pc'] = round(100 - masterdf['Population']/masterdf['worldpop']*100,2)
+
+# Calculate difference between Worldpop cropland population and ADP1
+masterdf['d1_poptotals'] = masterdf['worldpop_crop'] - masterdf['ADP1']
+masterdf['d1_pc'] = round(100 - masterdf['ADP1']/masterdf['worldpop_crop']*100,2)
+
+# Calculate difference between Worldpop cropland population and ADP2
+masterdf['d2_poptotals'] = masterdf['worldpop_crop'] - masterdf['ADP2']
+masterdf['d2_pc'] = round(100 - masterdf['ADP2']/masterdf['worldpop_crop']*100,2)
+
+# Calculate difference between Worldpop cropland population and ADP3
+masterdf['d3_poptotals'] = masterdf['worldpop_crop'] - masterdf['ADP3']
+masterdf['d3_pc'] = round(100 - masterdf['ADP3']/masterdf['worldpop_crop']*100,2)
+
+# Calculate difference between Worldpop cropland population and ADP4
+masterdf['d4_poptotals'] = masterdf['worldpop_crop'] - masterdf['ADP4']
+masterdf['d4_pc'] = round(100 - masterdf['ADP4']/masterdf['worldpop_crop']*100,2)
+
+# Calculate difference between Worldpop cropland population and ADP5
+masterdf['d5_poptotals'] = masterdf['worldpop_crop'] - masterdf['ADP5']
+masterdf['d5_pc'] = round(100 - masterdf['ADP5']/masterdf['worldpop_crop']*100,2)
+
 
 masterdf.drop(columns='geometry', inplace=True)
 
@@ -271,8 +306,7 @@ masterdf.head()
 # Export masterdf to csv
 masterdf.to_csv(masterdf_path, index=False)
 
-timestamp(time_40s)
-
+print('Master results file exported to csv.\n')
 
 
 print('\nScript complete.\n')
