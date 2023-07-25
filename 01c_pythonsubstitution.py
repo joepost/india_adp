@@ -43,8 +43,9 @@ start_time = time.time()
 
 # ==================================================================================================================
 # 2. QGIS PROCESSES: GHSL
+time_ghsl = time.time()
 
-
+# ===========
 # 2.1 Merge GHSL inputs into single raster covering all of India
 src_files_to_merge = []            # initialise empty list
 for file in ghsl_to_merge:
@@ -64,16 +65,10 @@ with rasterio.open(ghsl_merged         # output filepath
                    , **out_meta        # set the file metadata 
                    ) as dest:
     dest.write(merged)
+print('GHSL inputs merged into a single raster file.\n')
 
 
-# # 2.2a Check the CRS of GHSL merged file
-# # Open the GeoTIFF file
-# with rasterio.open(ghsl_merged) as src:         # 'with rasterio.open' ensures a file is 'opened' and 'closed' automatically at end of block
-#     crs = src.crs
-#     print("CRS of the GeoTIFF:")
-#     print(crs)
-
-
+# ===========
 # 2.2 Convert the CRS of merged GHSL file
 target_crs = 'EPSG:4326'
 with rasterio.open(ghsl_merged) as src:
@@ -101,16 +96,10 @@ with rasterio.open(ghsl_merged) as src:
                 dst_crs=target_crs,
                 resampling=Resampling.nearest
             )
-
-# # Check the updated CRS is correct
-# with rasterio.open(ghsl_merged_wgs84) as src:
-#     # Access the CRS information
-#     crs = src.crs
-#     # Print the CRS information
-#     print("CRS of the GeoTIFF:")
-#     print(crs)
+print('GHSL raster converted to CRS EPSG:4326.\n')
 
 
+# ===========
 # 2.3 Clip to specified state boundary
 # Read in vector boundaries
 districts_29 = gpd.read_file(districts_29_filepath)
@@ -139,60 +128,89 @@ clipped_meta.update({
 # Export clipped raster to .tif
 with rasterio.open(ghsl_29_clipped, 'w', **clipped_meta) as dst:
     dst.write(clipped_raster)
+print('GHSL raster clipped to state boundaries and exported as .tif.\n')
 
 
+# ===========
 # 2.4 Vectorise the GHSL raster layer
 # Read in GHSL raster
 with rasterio.open(ghsl_29_clipped) as src:
     raster_data = src.read(1                # Selects the 1st band in input file
-                           , masked=True    # Mask out any 'NoData' values
+                        #    , masked=True    # Mask out any 'NoData' values
                            )
     # Get the transformation matrix to convert pixel coordinates to geographic coordinates
     transform = src.transform
+    raster_crs = src.crs
 
-vector_features = []
-for geom, val in shapes(raster_data
-                        # , mask=raster_data.mask       
-                        , transform=transform):
-    if val in [11, 12, 13, 21]:
-        # Create a shapely geometry from the raster feature
-        geom = shape(geom)
-        # Append the geometry to the list of vector features
-        vector_features.append(geom)
+vector_features = []        # Initialise an empty list to store generated vector features in 
+for geom, val in shapes(raster_data, transform=transform):
+    if val in [11, 12, 13, 21]:         # GHSL rural area values
+        geom = shape(geom)              # Create a shapely geometry from the raster feature
+        vector_features.append(geom)    # Append the geometry to the list of vector features
 
-vector_features
+gdf_ghsl = gpd.GeoDataFrame({'geometry': vector_features}, crs = raster_crs)            # Convert vector_features into a GeoDataFrame
+gdf_ghsl['geometry'] = gdf_ghsl['geometry'].apply(lambda geom: shape(geom).buffer(0))   # Fix the geometries in GeoDataFrame (resolves self-intersections, overlapping polygons, etc.)
 
-# Create a GeoDataFrame from the vector features
-gdf = gpd.GeoDataFrame({'geometry': vector_features})
+# Export the GeoDataFrame to shapefile
+# NOTE: Can remove intermediate export step; unnecessary processing
+# gdf_ghsl.to_file(ghsl_poly)
 
-gdf.shape
-gdf.head()
-
-# # Define the path to save the shapefile
-# shapefile_output = 'path/to/output/vectorized_layer.shp'
-
-# # Save the GeoDataFrame to a shapefile
-# gdf.to_file(shapefile_output)
+print('GHSL raster vectorised.\n')
 
 
+# ===========
+# 2.5 Dissolve geometries into a single feature
+gdf_ghsl['dissolve_id'] = 1                                          # Create a new column with a constant value (ensures all dissolved into a single feature)
+dissolved_gdf_ghsl = gdf_ghsl.dissolve(by='dissolve_id', as_index=False)
+dissolved_gdf_ghsl.drop(columns='dissolve_id', inplace=True)         # Remove the 'dissolve_id' column (optional)
 
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# Read the raster file using rasterio:
-with rasterio.open(ghsl_29_clipped) as src:
-    # Read the raster data and mask out any NoData values
-    raster_data = src.read(1, masked=True)
+dissolved_gdf_ghsl.to_file(ghsl_poly_fixed)
+print('GHSL vector file dissolved into single feature.\n')
+
+
+print('GHSL processing complete.')
+timestamp(time_ghsl)
+
+
+
+# ==================================================================================================================
+# 3. Agricultural Lands (Dynamic World)
+time_cropland = time.time()
+
+# ===========
+# 3.1 Vectorise the DynamicWorld raster layer
+# Read in GHSL raster
+with rasterio.open(cropland) as src:
+    raster_data = src.read(1)                # Selects the 1st band in input file
     # Get the transformation matrix to convert pixel coordinates to geographic coordinates
     transform = src.transform
+    raster_crs = src.crs
 
-# Print unique values in the raster data
-print("Unique values in the raster data:", set(raster_data.flatten()))
+vector_features = []        # Initialise an empty list to store generated vector features in 
+for geom, val in shapes(raster_data, transform=transform):
+    if val == 1:
+         geom = shape(geom)              # Create a shapely geometry from the raster feature
+         vector_features.append(geom)    # Append the geometry to the list of vector features
 
-# Visualize the raster data
-plt.imshow(raster_data, cmap='gray')
-plt.colorbar()
-plt.show()
+gdf_cropland = gpd.GeoDataFrame({'geometry': vector_features}, crs = raster_crs)            # Convert vector_features into a GeoDataFrame
+gdf_cropland['geometry'] = gdf_cropland['geometry'].apply(lambda geom: shape(geom).buffer(0))   # Fix the geometries in GeoDataFrame (resolves self-intersections, overlapping polygons, etc.)
 
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+print('DynamicWorld raster vectorised.\n')
+
+
+# ===========
+# 2.5 Dissolve geometries into a single feature
+gdf_cropland['dissolve_id'] = 1                                          # Create a new column with a constant value (ensures all dissolved into a single feature)
+dissolved_gdf_cropland = gdf_cropland.dissolve(by='dissolve_id', as_index=False)
+dissolved_gdf_cropland.drop(columns='dissolve_id', inplace=True)         # Remove the 'dissolve_id' column (optional)
+
+dissolved_gdf_cropland.to_file(cropland_poly_dissolved)
+print('DynamicWorld vector file dissolved into single feature.\n')
+
+
+print('DynamicWorld processing complete.')
+timestamp(time_cropland)
+
 
 # ==================================================================================================================
 # EXTRA. ZONAL STATISTICS

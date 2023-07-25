@@ -129,7 +129,7 @@ print('GHSL poly layer clipped.\n')
 timestamp(time_25s)
 
 
-# 2.5 Create spatial index
+# 2.6 Create spatial index
 processing.run('native:createspatialindex',
                    {'INPUT': ghsl_india_clipped})
 
