@@ -20,8 +20,8 @@ import time
 repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
 
 # 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
-scale = '1km'
-# scale = '100m'
+# scale = '1km'
+scale = '100m'
 
 # 3. Set flag for working with single state or whole of India
 # [TO BE DONE]
@@ -54,8 +54,7 @@ boundaries_district =   os.path.join(datafolder, 'boundaries', 'district.shp' ) 
 boundaries_subdist =    os.path.join(datafolder, 'boundaries', 'gadm41_IND_3.shp')                          # GADM India boundaries shapefile
 locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_LocationDirectory.csv')         # State and district names and codes from Census
 pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_{scale}_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
-# cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_karnataka_cropland_{scale}.tif') # DynamicWorld extracted from GEE
-cropland =              os.path.join(datafolder, 'dynamicworld', '2020_dw_karnataka_cropland_100m.tif') # DynamicWorld extracted from GEE
+cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_karnataka_cropland_{scale}.tif') # DynamicWorld extracted from GEE
 
 #**** NOTE: 2023-07-21 Manually changed cropland file to use 100m scale instead of 1km;
 #           Intention is to test runtime and results impact for this change, without added computation of 100m WorldPop

@@ -129,6 +129,11 @@ print('GHSL poly layer clipped.\n')
 timestamp(time_25s)
 
 
+# 2.5 Create spatial index
+processing.run('native:createspatialindex',
+                   {'INPUT': ghsl_india_clipped})
+
+
 
 # ==================================================================================================================
 # 3. QGIS PROCESSES: Agricultural Lands (Dynamic World)
@@ -150,13 +155,14 @@ if not os.path.isfile(cropland_poly):
     timestamp(time_31s)
 
 # 3.2 Fix geometries on new polygon
-time_32s = time.time()
-print('Fixing geometries of DW croplands poly layer...\n')
-processing.run('native:fixgeometries',
-                   {'INPUT': cropland_poly,
-                    'OUTPUT': cropland_poly_fixed})
-print('Geometries of DW croplands poly layer fixed.\n')
-timestamp(time_32s)
+if not os.path.isfile(cropland_poly_fixed):
+    time_32s = time.time()
+    print('Fixing geometries of DW croplands poly layer...\n')
+    processing.run('native:fixgeometries',
+                    {'INPUT': cropland_poly,
+                        'OUTPUT': cropland_poly_fixed})
+    print('Geometries of DW croplands poly layer fixed.\n')
+    timestamp(time_32s)
 
 
 # 3.3 Clip the shape to India state boundaries
@@ -173,19 +179,21 @@ timestamp(time_32s)
 
 # 3.4 Dissolve the vector into a single feature
 # Dissolve also causing runtime issues with 100m inputs. Alternative: transfer to 02_python script?
-print('Dissolving DW croplands poly layer into single feature...\n')
-time_34s = time.time()
-processing.run('native:dissolve',
-                   {'INPUT': cropland_poly_fixed,
-                    'FIELD': 'cropland_b',
-                    'OUTPUT': cropland_poly_dissolved})
-print('DW croplands poly layer dissolved.\n')
-timestamp(time_34s)
+# NOTE: Transferred to script 02 as of 2023-07-23
+# print('Dissolving DW croplands poly layer into single feature...\n')
+# time_34s = time.time()
+# processing.run('native:dissolve',
+#                    {'INPUT': cropland_poly_fixed,
+#                     'FIELD': 'cropland_b',
+#                     'OUTPUT': cropland_poly_dissolved})
+# print('DW croplands poly layer dissolved.\n')
+# timestamp(time_34s)
 
 
 # 3.5 Create spatial index
 processing.run('native:createspatialindex',
-                   {'INPUT': cropland_poly_dissolved})
+                   {'INPUT': cropland_poly_fixed,
+                    'OUTPUT': cropland_poly_fixed})
 
 
 
