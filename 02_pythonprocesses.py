@@ -21,6 +21,7 @@ import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt
 # from osgeo import gdal
+from pygeos import Geometry
 
 from globals import *       # Imports the filepaths defined in globals.py
 
@@ -40,9 +41,8 @@ start_time = time.time()
 time_11s = time.time()
 
 gdf_pop = gpd.read_file(pop_points)
-# gdf_crops = gpd.read_file(cropland_poly_dissolved)
-gdf_crops = gpd.read_file(cropland_poly_fixed, layer='cropland_vector_fixed')          # dissolved process now moved into section 1B below
-gdf_ghsl = gpd.read_file(ghsl_india_clipped)
+gdf_crops = gpd.read_file(cropland_poly_dissolved)
+gdf_ghsl = gpd.read_file(ghsl_poly_dissolved)
     
 districts_29 = gpd.read_file(districts_29_filepath)
 
@@ -68,11 +68,12 @@ else:
     pop_joined_ghsl = gdf_pop.sjoin(gdf_ghsl, how = 'inner')
 
     # Create a filtered df and just keep the rural points (11, 12, 13, 21)
-    pop_points_rural = pop_joined_ghsl.loc[pop_joined_ghsl['settlement'].isin([11, 12, 13, 21])]
-    pop_points_rural = pop_points_rural.drop(columns='index_right')
+    # NOTE: NEED TO UPDATE THIS SECTION GIVEN THAT FILTERING OCCURS EARLIER
+    # pop_points_rural = pop_joined_ghsl.loc[pop_joined_ghsl['settlement'].isin([11, 12, 13, 21])]
+    # pop_points_rural = pop_points_rural.drop(columns='index_right')
 
     # Export the filtered rural population as a shp file
-    pop_points_rural.to_file(pop_points_rural_path, driver='ESRI Shapefile')
+    pop_joined_ghsl.to_file(pop_points_rural_path, driver='ESRI Shapefile')
     print('Rural population points exported to shapefile.\n')
 
 timestamp(time_21s)
