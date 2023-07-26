@@ -73,17 +73,18 @@ if not os.path.isfile(ghsl_merged):
 
 # ===========
 # 2.2 Convert the CRS of merged GHSL file
-target_crs = 'EPSG:4326'
+# target_crs = 'EPSG:4326'          # REMOVE if 2.2 code block works when run externally (anaconda prompt)
 if not os.path.isfile(ghsl_merged_wgs84):
     with rasterio.open(ghsl_merged) as src:
+        dst_crs = 'EPSG:4326'
         src_crs = src.crs
         transform, width, height = calculate_default_transform(
-            src_crs, target_crs, src.width, src.height, *src.bounds
+            src_crs, dst_crs, src.width, src.height, *src.bounds
         )
 
         kwargs = src.meta.copy()
         kwargs.update({
-            'crs': target_crs,
+            'crs': dst_crs,
             'transform': transform,
             'width': width,
             'height': height
@@ -168,10 +169,12 @@ print('GHSL raster vectorised.\n')
 gdf_ghsl['dissolve_id'] = 1                                          # Create a new column with a constant value (ensures all dissolved into a single feature)
 dissolved_gdf_ghsl = gdf_ghsl.dissolve(by='dissolve_id', as_index=False)
 dissolved_gdf_ghsl.drop(columns='dissolve_id', inplace=True)         # Remove the 'dissolve_id' column (optional)
+print('GHSL vector file dissolved into single feature.\n')
 
 if not os.path.isfile(ghsl_poly_dissolved):
-    dissolved_gdf_ghsl.to_file(ghsl_poly_dissolved)
-    print('GHSL vector file dissolved into single feature.\n')
+    dissolved_gdf_ghsl.to_feather(ghsl_poly_dissolved)
+    print('GHSL vector file exported to .feather.\n')
+    
 
 
 print('GHSL processing complete.')
@@ -208,15 +211,14 @@ print('DynamicWorld raster vectorised.\n')
 # 2.5 Dissolve geometries into a single feature
 # NOTE: dissolve process taking long processing time; consider whether dissolve can be skipped 
 #       and WorldPop points joined directly to the complex vectorised object. 
-# gdf_cropland['dissolve_id'] = 1                                          # Create a new column with a constant value (ensures all dissolved into a single feature)
-# dissolved_gdf_cropland = gdf_cropland.dissolve(by='dissolve_id', as_index=False)
-# dissolved_gdf_cropland.drop(columns='dissolve_id', inplace=True)         # Remove the 'dissolve_id' column (optional)
-
-# dissolved_gdf_cropland.to_file(cropland_poly_dissolved)
-# print('DynamicWorld vector file dissolved into single feature.\n')
+gdf_cropland['dissolve_id'] = 1                                          # Create a new column with a constant value (ensures all dissolved into a single feature)
+dissolved_gdf_cropland = gdf_cropland.dissolve(by='dissolve_id', as_index=False)
+dissolved_gdf_cropland.drop(columns='dissolve_id', inplace=True)         # Remove the 'dissolve_id' column (optional)
+print('DynamicWorld vector file dissolved into single feature.\n')
 
 
-
+dissolved_gdf_cropland.to_feather(cropland_poly_dissolved)
+print('DynamicWorld vector file exported to .feather.\n')
 
 
 print('DynamicWorld processing complete.')
@@ -284,9 +286,9 @@ gdf_pop = gpd.GeoDataFrame({'geometry': geometry}, crs=raster_crs)
 
 # NOTE: Currently not exporting WorldPop points as process takes too long.
 #       Can remove this, but then locks in long processing time each time the process is run?
-# gdf_pop.to_file(pop_points)
-# gdf_pop.to_file(pop_points_gpkg, driver='GPKG')         # export to geopackage (increase in performance?)
-# print('WorldPop raster converted into points and exported as .gpkg.\n')
+#   UPDATE 2023-07-26: Try exporting using geofeathers instead, to speed up processing time 
+gdf_pop.to_feather(pop_points)
+print('WorldPop raster converted into points and exported as .gpkg.\n')
 
 
 print('WorldPop processing complete.')

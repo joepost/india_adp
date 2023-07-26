@@ -20,8 +20,8 @@ import time
 repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
 
 # 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
-# scale = '1km'
-scale = '100m'
+scale = '1km'
+# scale = '100m'
 
 # 3. Set flag for working with single state or whole of India
 # [TO BE DONE]
@@ -42,7 +42,7 @@ sfmt = '.feather'    # geofeather
 
 # Working directories
 datafolder = os.path.join(repository,'Data')
-outputfolder = os.path.join(repository,'Output','100m')
+outputfolder = os.path.join(repository,'Output','feathertest')
 
 # Subfolders list
 data_subfolders = ['boundaries', 'census', 'dynamicworld', 'ghsl', 'worldpop']
@@ -83,8 +83,8 @@ ghsl_merged_wgs84 =     os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghs
 # ghsl_india_clipped =    os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_vector_clipped.shp')
 ghsl_poly_dissolved =       os.path.join(outputfolder, 'intermediates', 'ghsl', f'ghsl_india_vector_dissolved{sfmt}')
 
-state_29_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', f'state_29{sfmt}')         # Specific to Karnataka, for test run through
-districts_29_filepath = os.path.join(outputfolder, 'intermediates', 'boundaries_district', f'districts_29{sfmt}')
+state_29_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', 'state_29.shp')         # Specific to Karnataka, for test run through
+districts_29_filepath = os.path.join(outputfolder, 'intermediates', 'boundaries_district', 'districts_29.shp')
 ghsl_29_clipped =       os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_29_clipped.tif')
 
 agworkers_filepath =        os.path.join(outputfolder, 'intermediates', 'census', 'agworkers.csv')
@@ -106,7 +106,7 @@ cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamic
 
 pop_tif_clipped =           os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_tif_clipped.tif')
 pop_points =                os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points{sfmt}')
-pop_points_gpkg =           os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.gpkg')
+# pop_points_gpkg =           os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points.gpkg')
 # pop_points_clipped =        os.path.join(outputfolder, 'intermediates', 'worldpop', 'pop_points_clipped.shp')
 pop_joined_ghsl =           os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_ghsl_shp{sfmt}')  # joined shapefile of WorldPop + GHSL
 pop_points_rural_path =     os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_rural{sfmt}')
