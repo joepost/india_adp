@@ -14,6 +14,7 @@ import subprocess
 import sys
 import json
 import pandas as pd
+import xlrd
 
 os.environ['USE_PYGEOS'] = '0'
 import geopandas as gpd
@@ -37,11 +38,22 @@ for path in data_subfolders:
         os.makedirs(subfolderpath)
 
 for path in output_subfolders:
+    subfolderpath = os.path.join(outputfolder, path)
+    if not os.path.exists(subfolderpath):
+        print(f"Creating folder {subfolderpath}")
+        os.makedirs(subfolderpath)
+
+for path in intermediate_subfolders:
     subfolderpath = os.path.join(outputfolder, 'intermediates', path)
     if not os.path.exists(subfolderpath):
         print(f"Creating folder {subfolderpath}")
         os.makedirs(subfolderpath)
 
+for path in final_subfolders:
+    subfolderpath = os.path.join(outputfolder, 'final', path)
+    if not os.path.exists(subfolderpath):
+        print(f"Creating folder {subfolderpath}")
+        os.makedirs(subfolderpath)    
 
 
 # ==================================================================================================================
@@ -57,8 +69,7 @@ state_codes = loc_codes[(loc_codes["District Code"]==0) &
 state_codes
 
 # Create a df of district codes and names
-# Initially, this is just for the test state Karnataka
-district_codes = loc_codes[(loc_codes["State Code"]==29) &
+district_codes = loc_codes[(loc_codes["State Code"]==state_code) &
                            (loc_codes["Sub District Code"]==0) &
                            (loc_codes["Town-Village Code"]==0)].filter(items=["State Code", "District Code", "Town-Village Name"])
 district_codes.head(10)
@@ -70,24 +81,48 @@ districts = gpd.read_file(boundaries_district)
 districts = districts.astype({'pc11_s_id':'int64',
                               'pc11_d_id':'int64'})
 
-# ******************************
-# TODO: The code in this bracket is specified to Karnataka, as part of the test run. This will need to updated for the whole India approach. 
 
-# Create shapefile specific to Karnataka
-state_29 = states[states["NAME_1"]=="Karnataka"]
-# districts_29 = districts[districts["NAME_1"]=="Karnataka"]
-districts_29 = districts[districts['pc11_s_id']==29]          # 2023-07-12 Have changed input file to SHRUG source. Includes census coding, unlike GADM. 
+# Create shapefile of specified State
+state_shp = states[states["NAME_1"] == state_name]
+districts_shp = districts[districts['pc11_s_id'] == state_code]          # 2023-07-12 Have changed input file to SHRUG source. Includes census coding, unlike GADM. 
 
-# Export Karnataka shapefiles
-state_29.to_file(state_29_filepath, mode="w")
-districts_29.to_file(districts_29_filepath, mode="w")
-
-# ******************************
+# Export shapefiles
+state_shp.to_file(state_filepath, mode="w")
+districts_shp.to_file(districts_filepath, mode="w")
 
 
 # Read in the census data
-census_ag_main =        pd.read_csv(agworkers_main)
-census_ag_marginal =    pd.read_csv(agworkers_marginal)
+b4_column_names = ['Table code', 'State code', 'District code', 'Area name', 'Total Rural Urban', 'Age group'
+                   , 'Main workers P', 'Main workers M', 'Main workers F', 'Cultivators P', 'Cultivators M', 'Cultivators F'
+                   , 'Agricultural labourers P', 'Agricultural labourers M', 'Agricultural labourers F'
+                   , 'Primary sector other P', 'Primary sector other M', 'Primary sector other F' 
+]
+census_ag_main = pd.read_excel(agworkers_main
+                               , sheet_name=0
+                               , header = None
+                               , names = b4_column_names
+                               , usecols = 'A:R'
+                               , skiprows = 8
+                               , skipfooter = 24
+                               )
+
+
+b6_column_names = ['Table code', 'State code', 'District code', 'Area name', 'Total Rural Urban', 'Age group'
+                   , 'marginal_6m_p', 'marginal_6m_m', 'marginal_6m_f'
+                   , 'marginal_3m_p', 'marginal_3m_m', 'marginal_3m_f'
+                   , 'Cultivators P', 'Cultivators M', 'Cultivators F'
+                   , 'Agricultural labourers P', 'Agricultural labourers M', 'Agricultural labourers F'
+                   , 'Primary sector other P', 'Primary sector other M', 'Primary sector other F' 
+]
+census_ag_marginal = pd.read_excel(agworkers_marginal
+                               , sheet_name=0
+                               , header = None
+                               , names = b6_column_names
+                               , usecols = 'A:U'
+                               , skiprows = 8
+                               , skipfooter = 24
+                               )
+
 census_pop =            pd.read_csv(census_population)
 
 
@@ -117,7 +152,7 @@ ag_marginal_cln = ag_marginal_cln[['District code', 'marginal_6m_p'
                                 ]]
 
 # Filter Total Population df
-census_pop_cln = census_pop[(census_pop['Total Rural Urban'] == 'Total') & (census_pop['State  Code'] > 0)]
+census_pop_cln = census_pop[(census_pop['Total Rural Urban'] == 'Total') & (census_pop['State  Code'] == state_code)]
 census_pop_cln = census_pop_cln[['District Code', 'Population', 'Area sq km', 'Population per sq km']]
 census_pop_cln.rename(columns={'District Code':'District code'}, inplace=True)
 census_pop_cln = census_pop_cln.astype({'Population':'int64'},
@@ -125,6 +160,7 @@ census_pop_cln = census_pop_cln.astype({'Population':'int64'},
 
 # Join marginal file to main
 ag_workers = ag_main_cln.merge(ag_marginal_cln, how='left', on='District code', suffixes=('_main','_marg'))
+
 
 # Join census population file to main
 ag_workers = ag_workers.merge(census_pop_cln, how='left', on='District code')
