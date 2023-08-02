@@ -31,8 +31,11 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 from rasterio.mask import mask
 from rasterio.plot import show
 from rasterio.features import shapes
+from rasterio.crs import CRS
 from shapely.geometry import shape
 from shapely.geometry import Point
+from shapely.geometry import box
+
 # from pygeos import Geometry
 
 from globals import *       # Imports the filepaths defined in globals.py
@@ -51,25 +54,27 @@ time_ghsl = time.time()
 # ===========
 # 2.1 Merge GHSL inputs into single raster covering all of India
 time_21s = time.time()
-src_files_to_merge = []            # initialise empty list
-for file in ghsl_to_merge:
-    src = rasterio.open(file)
-    src_files_to_merge.append(src)
-
-merged, out_trans = merge(src_files_to_merge)
-
-out_meta = src.meta.copy()
-out_meta.update({"driver": "GTiff",
-                 "height": merged.shape[1],
-                 "width": merged.shape[2],
-                 "transform": out_trans})
 
 if not os.path.isfile(ghsl_merged):
-    with rasterio.open(ghsl_merged          # output filepath
-                    , "w"                   # = overwrite existing files
-                    , **out_meta            # set the file metadata 
-                    ) as dest:
-        dest.write(merged)
+    src_files_to_merge = []            # initialise empty list
+    for file in ghsl_to_merge:
+        src = rasterio.open(file)
+        src_files_to_merge.append(src)
+
+    merged, out_trans = merge(src_files_to_merge)
+
+    out_meta = src.meta.copy()
+    out_meta.update({"driver": "GTiff",
+                    "height": merged.shape[1],
+                    "width": merged.shape[2],
+                    "transform": out_trans})
+
+    if not os.path.isfile(ghsl_merged):
+        with rasterio.open(ghsl_merged          # output filepath
+                        , "w"                   # = overwrite existing files
+                        , **out_meta            # set the file metadata 
+                        ) as dest:
+            dest.write(merged)
 print('GHSL inputs merged into a single raster file.\n')
 timestamp(time_21s)
 
@@ -79,13 +84,10 @@ timestamp(time_21s)
 time_22s = time.time()
 
 if not os.path.isfile(ghsl_merged_wgs84):
+    dst_crs = 'EPSG:4326'
     with rasterio.open(ghsl_merged) as src:
-        dst_crs = 'EPSG:4326'
-        src_crs = src.crs
         transform, width, height = calculate_default_transform(
-            src_crs, dst_crs, src.width, src.height, *src.bounds
-        )
-
+            src.crs, dst_crs, src.width, src.height, *src.bounds)
         kwargs = src.meta.copy()
         kwargs.update({
             'crs': dst_crs,
@@ -100,11 +102,11 @@ if not os.path.isfile(ghsl_merged_wgs84):
                     source=rasterio.band(src, i),
                     destination=rasterio.band(dst, i),
                     src_transform=src.transform,
-                    src_crs=src_crs,
+                    src_crs=src.crs,
                     dst_transform=transform,
-                    dst_crs='EPSG:4326',
-                    resampling=Resampling.nearest
-                )
+                    dst_crs=dst_crs,
+                    resampling=Resampling.nearest)
+
 print('GHSL raster converted to CRS EPSG:4326.\n')
 timestamp(time_22s)
 

@@ -38,6 +38,12 @@ for path in data_subfolders:
         os.makedirs(subfolderpath)
 
 for path in output_subfolders:
+    subfolderpath = os.path.join(repository,'Output', path)
+    if not os.path.exists(subfolderpath):
+        print(f"Creating folder {subfolderpath}")
+        os.makedirs(subfolderpath)
+
+for path in output_scale_subfolders:
     subfolderpath = os.path.join(outputfolder, path)
     if not os.path.exists(subfolderpath):
         print(f"Creating folder {subfolderpath}")
