@@ -14,6 +14,8 @@ import subprocess
 import sys
 import json
 import pandas as pd
+
+os.environ['USE_PYGEOS'] = '0'
 import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt

@@ -127,6 +127,8 @@ masterdf_path =      os.path.join(outputfolder, 'final', 'masterdf.csv')
 def timestamp(initial_time):
     end_time = time.time()
     elapsed_time = end_time - initial_time
-    print('Elapsed time: ', round(elapsed_time, 1), ' seconds.\n')
-
+    if elapsed_time > 60:
+        print('Elapsed time: ', round(elapsed_time/60, 1), ' minutes.\n')
+    else:
+        print('Elapsed time: ', round(elapsed_time, 1), ' seconds.\n')
 
