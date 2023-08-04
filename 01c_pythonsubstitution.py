@@ -238,7 +238,8 @@ time_worldpop = time.time()
 time_41s = time.time()
 
 # Read in vector boundaries
-districts_shp = gpd.read_file(districts_filepath)
+# NOTE: can remove; aready read in file above
+# districts_shp = gpd.read_file(districts_filepath)
 
 # Read in WorldPop raster to be clipped
 with rasterio.open(pop_tif) as src:

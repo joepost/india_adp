@@ -13,6 +13,8 @@
 import os
 import glob
 import time
+from re import sub
+
 
 # ********************************************
 # TODO: 
@@ -20,17 +22,16 @@ import time
 repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
 
 # 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
-scale = '1km'
-# scale = '100m'
+# scale = '1km'
+scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-# state_name = 'Karnataka'    
-# state_snake = 'karnataka'   # snake case
-# state_code = 29             # code taken from Census India
+# state_name = 'Karnataka'
+state_code = '14'             # code taken from Census India
 
-state_name = 'Kerala'    
-state_snake = 'kerala'   # snake case
-state_code = 32             # code taken from Census India
+# NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
+#       Maybe not a priority in the time remaining; won't have any effect on final submission 
+#       And recurring errors mean it is unlikely to run smoothly through all.
 
 # 4. Set desired GHSL model to be used
 ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch 2030, 1km,     Mollweide
@@ -43,8 +44,34 @@ worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation,
 # 6. Set output spatial file format
 # sfmt = '.shp'      # shapefile
 sfmt = '.feather'    # geofeather
+
+# 7. Set whether to use Total, Rural or Urban counts from census population tables
+# tru_cat = 'Total'
+tru_cat = 'Rural'
+# tru_cat = 'Urban'
 # ********************************************
 
+
+# ==================================================================================================================
+# FUNCTIONS
+
+def timestamp(initial_time):
+    end_time = time.time()
+    elapsed_time = end_time - initial_time
+    if elapsed_time > 60:
+        print('Elapsed time: ', round(elapsed_time/60, 1), ' minutes.\n')
+    else:
+        print('Elapsed time: ', round(elapsed_time, 1), ' seconds.\n')
+
+
+def snake_case(s):
+  return '_'.join(
+    sub('([A-Z][a-z]+)', r' \1',
+    sub('([A-Z]+)', r' \1',
+    s.replace('-', ' '))).split()).lower()
+
+# ==================================================================================================================
+# FILE PATHS
 
 # Working directories
 datafolder = os.path.join(repository,'Data')
@@ -65,11 +92,13 @@ boundaries_national =   os.path.join(datafolder, 'boundaries', 'gadm41_IND_0.shp
 boundaries_state =      os.path.join(datafolder, 'boundaries', 'gadm41_IND_1.shp')                          # GADM India boundaries shapefile
 boundaries_district =   os.path.join(datafolder, 'boundaries', 'district.shp' )                         # GADM India boundaries shapefile
 locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_LocationDirectory.csv')         # State and district names and codes from Census
-pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_{scale}_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
-cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_{state_snake}_cropland_{scale}.tif') # DynamicWorld extracted from GEE
+# pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_{scale}_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
+# NOTE: CURRENT TRIAL = 100m CROPLAND; 1km POPULATION. NOT COMPUTATIONALLY FEASIBLE TO USE 100m POP POINTS DATA. 
+pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_1km_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
+cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_{state_code}_cropland_{scale}.tif') # DynamicWorld extracted from GEE
 agworkers_main =         os.path.join(datafolder, 'census', f'DDW-B04-{state_code}00.xls')              # Census B-04 = Main workers tables
 agworkers_marginal =     os.path.join(datafolder, 'census', f'DDW-B06-{state_code}00.xls')              # Census B-06 = Marginal workers tables
-census_population =      os.path.join(datafolder, 'census', 'CensusIndia2011_A-1_Population_cln.csv')   # Census A-01 = district populations
+census_population =      os.path.join(datafolder, 'census', 'CensusIndia2011_A-1_NO_OF_VILLAGES_TOWNS_HOUSEHOLDS_POPULATION_AND_AREA.xlsx')   # Census A-01 = district populations
 
 
 # GHSL component files
@@ -103,23 +132,12 @@ agworkers_filepath =        os.path.join(outputfolder, 'intermediates', 'census'
 cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', f'cropland_vector_{state_code}_dissolved{sfmt}')
 
 pop_tif_clipped =           os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_tif_{state_code}_clipped.tif')
-pop_points =                os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_{sfmt}')
+pop_points =                os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}{sfmt}')
 pop_points_rural_path =     os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_rural{sfmt}')
 pop_points_cropland_path =  os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_cropland{sfmt}')
 
 # Output files
 # These file paths store the final output files used in the Results section
-masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}.csv')
-bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}.png')
-
-# ==================================================================================================================
-# FUNCTIONS
-
-def timestamp(initial_time):
-    end_time = time.time()
-    elapsed_time = end_time - initial_time
-    if elapsed_time > 60:
-        print('Elapsed time: ', round(elapsed_time/60, 1), ' minutes.\n')
-    else:
-        print('Elapsed time: ', round(elapsed_time, 1), ' seconds.\n')
+masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}.csv')
+bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')
 

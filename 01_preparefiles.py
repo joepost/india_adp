@@ -15,6 +15,7 @@ import sys
 import json
 import pandas as pd
 import xlrd
+import openpyxl
 
 os.environ['USE_PYGEOS'] = '0'
 import geopandas as gpd
@@ -65,38 +66,6 @@ for path in final_subfolders:
 # ==================================================================================================================
 # 2. LOAD AND CLEAN DATA
 
-loc_codes = pd.read_csv(locationcodes)
-loc_codes.head()
-
-# Create a df of state codes and names
-state_codes = loc_codes[(loc_codes["District Code"]==0) &
-                        (loc_codes["Sub District Code"]==0) & 
-                        (loc_codes["Town-Village Code"]==0)].filter(items=["State Code", "Town-Village Name"])
-state_codes
-
-# Create a df of district codes and names
-district_codes = loc_codes[(loc_codes["State Code"]==state_code) &
-                           (loc_codes["Sub District Code"]==0) &
-                           (loc_codes["Town-Village Code"]==0)].filter(items=["State Code", "District Code", "Town-Village Name"])
-district_codes.head(10)
-
-
-# Read in shapefile
-states = gpd.read_file(boundaries_state)
-districts = gpd.read_file(boundaries_district)
-districts = districts.astype({'pc11_s_id':'int64',
-                              'pc11_d_id':'int64'})
-
-
-# Create shapefile of specified State
-state_shp = states[states["NAME_1"] == state_name]
-districts_shp = districts[districts['pc11_s_id'] == state_code]          # 2023-07-12 Have changed input file to SHRUG source. Includes census coding, unlike GADM. 
-
-# Export shapefiles
-state_shp.to_file(state_filepath, mode="w")
-districts_shp.to_file(districts_filepath, mode="w")
-
-
 # Read in the census data
 b4_column_names = ['Table code', 'State code', 'District code', 'Area name', 'Total Rural Urban', 'Age group'
                    , 'Main workers P', 'Main workers M', 'Main workers F', 'Cultivators P', 'Cultivators M', 'Cultivators F'
@@ -107,6 +76,7 @@ census_ag_main = pd.read_excel(agworkers_main
                                , sheet_name=0
                                , header = None
                                , names = b4_column_names
+                               , dtype = {'State code':str, 'District code':str}
                                , usecols = 'A:R'
                                , skiprows = 8
                                , skipfooter = 24
@@ -124,16 +94,65 @@ census_ag_marginal = pd.read_excel(agworkers_marginal
                                , sheet_name=0
                                , header = None
                                , names = b6_column_names
+                               , dtype = {'State code':str, 'District code':str}
                                , usecols = 'A:U'
                                , skiprows = 8
                                , skipfooter = 24
                                )
 
-census_pop =            pd.read_csv(census_population)
+
+a1_column_names = ['State Code',	'District Code',	'Sub District Code', 'Region',	'Name',	'Total Rural Urban'
+                   ,	'Villages inhabited',	'Villages uninhabited',	'Number of towns',	'Number of households'
+                   ,	'Population',	'Males',	'Females',	'Area sq km',	'Population per sq km'
+                   ]
+census_pop =            pd.read_excel(census_population
+                                      , sheet_name=0
+                                      , header = None
+                                      , names = a1_column_names
+                                      , dtype = {'State Code':str, 'District Code':str, 'Sub District Code':str}
+                                      , usecols = 'A:O'
+                                      , skiprows = 4
+                                      , skipfooter = 28
+                                      )
+
+
+# Create dataframe of location codes
+loc_codes = census_pop[['State Code', 'District Code', 'Sub District Code', 'Region', 'Name']]
+state_codes = loc_codes[(loc_codes['Sub District Code']== '00000') & 
+                        (loc_codes['District Code']=='000') &
+                        (loc_codes['State Code']!='00')
+                        ]
+state_codes.drop_duplicates(subset='State Code', inplace=True)
+district_codes = loc_codes[(loc_codes['Sub District Code']== '00000') & 
+                        (loc_codes['District Code']!='000') &
+                          (loc_codes['State Code']!='00')
+                          ]
+district_codes.drop_duplicates(subset='District Code', inplace=True)
+
+
+# Define state name, given the state code provided in globals.py
+state_name = state_codes.loc[state_codes['State Code'] == state_code, 'Name'].item()
+state_snake = snake_case(state_name)
+
+
+# Read in shapefile
+states = gpd.read_file(boundaries_state)
+districts = gpd.read_file(boundaries_district)
+
+# Create shapefile of specified State
+# state_shp = states[states["NAME_1"] == state_name]
+districts_shp = districts[districts['pc11_s_id'] == state_code]          # 2023-07-12 Have changed input file to SHRUG source. Includes census coding, unlike GADM. 
+
+# Export shapefiles
+# if not os.path.isfile(state_filepath):
+#   state_shp.to_file(state_filepath, mode="w")
+if not os.path.isfile(districts_filepath):
+  districts_shp.to_file(districts_filepath, mode="w")
+
 
 
 # Filter Age, Rural/Urban status, and Gender
-ag_main_cln = census_ag_main[(census_ag_main['Age group'] == 'Total') & (census_ag_main['Total Rural Urban'] == 'Total')]
+ag_main_cln = census_ag_main[(census_ag_main['Age group'] == 'Total') & (census_ag_main['Total Rural Urban'] == tru_cat)]
 ag_main_cln = ag_main_cln[['State code', 'District code', 'Area name',
        'Total Rural Urban', 'Age group', 'Main workers P'
     #    , 'Main workers M', 'Main workers F'
@@ -144,7 +163,7 @@ ag_main_cln = ag_main_cln[['State code', 'District code', 'Area name',
     , 'Primary sector other P'
     #   , 'Primary sector other M', 'Primary sector other F'
        ]]
-ag_marginal_cln = census_ag_marginal[(census_ag_marginal['Age group'] == 'Total') & (census_ag_marginal['Total Rural Urban'] == 'Total')]
+ag_marginal_cln = census_ag_marginal[(census_ag_marginal['Age group'] == 'Total') & (census_ag_marginal['Total Rural Urban'] == tru_cat)]
 ag_marginal_cln = ag_marginal_cln[['District code', 'marginal_6m_p'
                                 # , 'marginal_6m_m', 'marginal_6m_f' 
                                   , 'marginal_3m_p'
@@ -158,7 +177,10 @@ ag_marginal_cln = ag_marginal_cln[['District code', 'marginal_6m_p'
                                 ]]
 
 # Filter Total Population df
-census_pop_cln = census_pop[(census_pop['Total Rural Urban'] == 'Total') & (census_pop['State  Code'] == state_code)]
+census_pop_cln = census_pop[(census_pop['Total Rural Urban'] == tru_cat) & 
+                            (census_pop['State Code'] == state_code) &
+                            (census_pop['Sub District Code'] == '00000')
+                            ]
 census_pop_cln = census_pop_cln[['District Code', 'Population', 'Area sq km', 'Population per sq km']]
 census_pop_cln.rename(columns={'District Code':'District code'}, inplace=True)
 census_pop_cln = census_pop_cln.astype({'Population':'int64'},

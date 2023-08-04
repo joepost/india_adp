@@ -54,7 +54,9 @@ elif sfmt == '.feather':
     
 districts_shp = gpd.read_file(districts_filepath)
 
-ag_workers = pd.read_csv(agworkers_filepath) 
+ag_workers = pd.read_csv(agworkers_filepath
+                         , dtype = {'State code':str, 'District code':str}
+                         ) 
 
 print('Input data files loaded.\n')
 timestamp(time_11s)
@@ -270,20 +272,39 @@ masterdf_bplot = masterdf[['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4'
 masterdf_bplot_pc = masterdf[['d_pc0', 'd_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5']]
 
 # Plot figures
+# Apply the default theme
 fig, axes = plt.subplots(2, 1, figsize=(12, 8))
 # create chart in each subplot
 sns.boxplot(data=masterdf_bplot
             , orient = 'h'
             , ax=axes[0]
+            , palette = 'Blues'
             ).set(title="Difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
 sns.boxplot(data=masterdf_bplot_pc
             , orient = 'h'
             , ax=axes[1]
+            , palette = 'Blues'
             ).set(title="Percentage difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
 # save figure to output folder
 plt.savefig(bplot_adp, dpi=600, facecolor="white", bbox_inches="tight")
 # display figure
 plt.show()
+
+
+# Plot standalone figures
+# fig, ax = plt.subplots(figsize=(12, 8))
+# ax = sns.catplot(data=masterdf_bplot_pc, kind="swarm")
+# plt.show()
+
+# sns.set_theme(style="white", palette="Greens", font="arial")
+
+# ax = sns.catplot(data=masterdf_bplot_pc
+#             , orient = 'h'
+#             , kind="box")
+#         #     , ax=axes[1]
+#         #     ).set(title="Percentage difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
+# # sns.despine()
+# plt.show()
 
 
 
