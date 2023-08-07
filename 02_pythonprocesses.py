@@ -220,6 +220,11 @@ masterdf = masterdf.merge(join_worldpop_crop, how='left', on=['pc11_d_id'])
 #   4. Difference between Worldpop cropland population and ADP4
 #   5. Difference between Worldpop cropland population and ADP5
 
+# TODO: recalculate percentage changes to follow Sri Lanka method
+#       1. Calculate the ADPc as a proportion of total population
+#       2. Calculate the ADPa as a proportion of total population
+#       3. Calculate the difference between [1] and [2]
+
 # Calculate difference between Worldpop total population and Census total population
 masterdf['d_poptotals'] = masterdf['worldpop'] - masterdf['Population']
 masterdf['d_pc0'] = round(100 - masterdf['Population']/masterdf['worldpop']*100,2)
@@ -251,6 +256,20 @@ masterdf.drop(columns='geometry', inplace=True)
 # masterdf.columns
 masterdf.head()
 
+# Add column to flag districts that need a buffer
+# First, define function with conditional rules
+# NOTE: Currently running using ADP3 as main measurement; CHANGE THIS IF NEEDED
+def categorize_buffer(row):
+    if row['d_pc3'] < -5:
+        return 'enlarge'
+    elif row['d_pc3'] > 5:
+           return 'reduce'
+    else:
+        return 'unchanged'
+
+# Next apply conditional rows to each row of masterdf
+masterdf['need_buffer'] = masterdf.apply(categorize_buffer, axis=1)
+
 # Export masterdf to csv
 masterdf.to_csv(masterdf_path, index=False)
 
@@ -268,25 +287,8 @@ print('Master results file exported to csv.\n')
 #       4. Check if the new calculation meets criteria
 
 # List of district codes
-buffer_districts = district_codes[district_codes['State Code']==state_code]
-buffer_d_list = buffer_districts['District Code'].tolist()
-
-# Let's create a dictionary that contains the district name as key and the final buffer radius as values
-buffer_r_dict = {}
-    # Initialise the dictionary with zero values:
-for y in buffer_d_list:
-        buffer_r_dict[y] = 0
-
-
-# TODO: NEXT STEPS
-#       Need to systematise the buffer code to iterate through districts (currently fixed to single code)
-#       THEN need to add in a filter system to only select desired rows
-#       i.e. only run positive buffer on neg d_pc districts; write a declining buffer for the opposite set. 
-#       ALSO think further about exclusion of irregular districts (too urban, too small cropland, etc.)
-
-# List of district codes
-buffer_districts = district_codes[district_codes['State Code']==state_code]
-buffer_d_list = buffer_districts['District Code'].tolist()
+buffer_districts = masterdf[masterdf['need_buffer']=='enlarge']
+buffer_d_list = buffer_districts['pc11_d_id'].tolist()
 
 # Define a function to create a buffer and recalculate the ADP estimate
 # Where:
@@ -326,15 +328,22 @@ def enlarge_buffer(districts_shp, crops_shp, pop_points, district_code, buffer_r
         timestamp(time_buff)
         return sum_buffer_points
 
-# Test function
-sum_buffer_300 = enlarge_buffer(districts_shp, gdf_crops, gdf_pop, '300', 0.0001)
-
-
-# Let's create a dictionary that contains the district name as key and the final buffer radius as values
-buffer_r_dict = {}
-    # Initialise the dictionary with zero values:
+# Run function over set of districts and combine outputs into a single GeoDataframe
+# First, create an empty GDF
+df = pd.DataFrame(columns=['raster_value', 'pc11_d_id', 'buffer_r', 'geometry'])
+buffer_gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
+# Run through district list
 for y in buffer_d_list:
-        buffer_r_dict[y] = 0
+        sum_buffer_gdf = enlarge_buffer(districts_shp, gdf_crops, gdf_pop, y, 0.0001)
+        sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
+        buffer_gdf = pd.concat([sum_buffer_gdf, buffer_gdf])
+
+buffer_gdf
+
+# Merge ADP estimate to buffer values and recalculate d_pc3
+df = masterdf[['pc11_d_id', 'd_name', 'ADP3', 'worldpop_crop', 'd_adp3', 'd_pc3']]
+check_buffer = buffer_gdf.merge(df, how='left', on='pc11_d_id')
+check_buffer['d_pc3_new'] = round(100 - check_buffer['ADP3']/check_buffer['raster_value']*100,2)
 
 
 
