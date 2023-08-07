@@ -229,27 +229,40 @@ masterdf = masterdf.merge(join_worldpop_crop, how='left', on=['pc11_d_id'])
 masterdf['d_poptotals'] = masterdf['worldpop'] - masterdf['Population']
 masterdf['d_pc0'] = round(100 - masterdf['Population']/masterdf['worldpop']*100,2)
 
+# NEW: 2023-08-07
+masterdf['ADPa_pctotal'] = masterdf['worldpop_crop']/masterdf['Population']*100
+
 # Calculate difference between Worldpop cropland population and ADP1
-masterdf['d_adp1'] = masterdf['worldpop_crop'] - masterdf['ADP1']
-masterdf['d_pc1'] = round(100 - masterdf['ADP1']/masterdf['worldpop_crop']*100,2)
+masterdf['ADPc1_pctotal'] = masterdf['ADP1']/masterdf['Population']*100
+# masterdf['d_adp1'] = masterdf['worldpop_crop'] - masterdf['ADP1']
+# masterdf['d_pc1'] = round(100 - masterdf['ADP1']/masterdf['worldpop_crop']*100,2)
+masterdf['d_pc1'] = masterdf['ADPc1_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP2
-masterdf['d_adp2'] = masterdf['worldpop_crop'] - masterdf['ADP2']
-masterdf['d_pc2'] = round(100 - masterdf['ADP2']/masterdf['worldpop_crop']*100,2)
+masterdf['ADPc2_pctotal'] = masterdf['ADP2']/masterdf['Population']*100
+# masterdf['d_adp2'] = masterdf['worldpop_crop'] - masterdf['ADP2']
+# masterdf['d_pc2'] = round(100 - masterdf['ADP2']/masterdf['worldpop_crop']*100,2)
+masterdf['d_pc2'] = masterdf['ADPc2_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP3
-masterdf['d_adp3'] = masterdf['worldpop_crop'] - masterdf['ADP3']
-masterdf['d_pc3'] = round(100 - masterdf['ADP3']/masterdf['worldpop_crop']*100,2)
+masterdf['ADPc3_pctotal'] = masterdf['ADP3']/masterdf['Population']*100
+# masterdf['d_adp3'] = masterdf['worldpop_crop'] - masterdf['ADP3']
+# masterdf['d_pc3'] = round(100 - masterdf['ADP3']/masterdf['worldpop_crop']*100,2)
+masterdf['d_pc3'] = masterdf['ADPc3_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP4
-masterdf['d_adp4'] = masterdf['worldpop_crop'] - masterdf['ADP4']
-masterdf['d_pc4'] = round(100 - masterdf['ADP4']/masterdf['worldpop_crop']*100,2)
+masterdf['ADPc4_pctotal'] = masterdf['ADP4']/masterdf['Population']*100
+# masterdf['d_adp4'] = masterdf['worldpop_crop'] - masterdf['ADP4']
+# masterdf['d_pc4'] = round(100 - masterdf['ADP4']/masterdf['worldpop_crop']*100,2)
+masterdf['d_pc4'] = masterdf['ADPc4_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP5
-masterdf['d_adp5'] = masterdf['worldpop_crop'] - masterdf['ADP5']
-masterdf['d_pc5'] = round(100 - masterdf['ADP5']/masterdf['worldpop_crop']*100,2)
+masterdf['ADPc5_pctotal'] = masterdf['ADP5']/masterdf['Population']*100
+# masterdf['d_adp5'] = masterdf['worldpop_crop'] - masterdf['ADP5']
+# masterdf['d_pc5'] = round(100 - masterdf['ADP5']/masterdf['worldpop_crop']*100,2)
+masterdf['d_pc5'] = masterdf['ADPc5_pctotal'] - masterdf['ADPa_pctotal']
 
-dlist = ['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3','d_adp4', 'd_adp5']
+dlist = ['d_poptotals', 'd_pc1', 'd_pc2', 'd_pc3','d_pc4', 'd_pc5']
 
 masterdf.drop(columns='geometry', inplace=True)
 
@@ -369,15 +382,15 @@ check_buffer['d_pc3_new'] = round(100 - check_buffer['ADP3']/check_buffer['raste
 # # Append into a single dataframe
 # statsdf['d_pc'] = statsdf_pc['d_pc']
 
-masterdf_bplot = masterdf[['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5']]
-masterdf_bplot_pc = masterdf[['d_pc0', 'd_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5']]
+# masterdf_bplot = masterdf[['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5']]
+masterdf_bplot_pc = masterdf[['d_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5']]
 
 # ==================================
 # Plot figures: BOXPLOT
 # Apply the default theme
 fig, axes = plt.subplots(2, 1, figsize=(12, 8))
 # create chart in each subplot
-sns.boxplot(data=masterdf_bplot
+sns.boxplot(data=masterdf_bplot_pc
             , orient = 'h'
             , ax=axes[0]
             , palette = 'Blues'
