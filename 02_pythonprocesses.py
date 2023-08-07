@@ -136,7 +136,10 @@ sum_pop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, aggfu
                                                                                     'd_name':'first'})
 sum_pop_districts['raster_value'] = sum_pop_districts['raster_value'].round()         # remove unnecessary decimals
 
-print('Pop points joined to district boundaries.\n')
+# Export the worldpop points by district
+sum_pop_districts.to_feather(sum_pop_districts_path)  
+
+print(f'Pop points joined to district boundaries and exported to {sfmt}.\n')
 timestamp(time_32s)
 
 
@@ -153,7 +156,10 @@ sum_rupop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, agg
                                                                                       'd_name':'first'})
 sum_rupop_districts['raster_value'] = sum_rupop_districts['raster_value'].round()
 
-print('Rural pop points joined to district boundaries.\n')
+# Export the rural points by district
+sum_rupop_districts.to_feather(sum_rupop_districts_path)  
+
+print(f'Rural pop points joined to district boundaries and export to {sfmt}.\n')
 timestamp(time_33s)
 
 # ===========
@@ -169,7 +175,10 @@ sum_crpop_districts = dissolve_df.dissolve(by = 'pc11_d_id', as_index=False, agg
                                                                                       'd_name':'first'})
 sum_crpop_districts['raster_value'] = sum_crpop_districts['raster_value'].round()
 
-print('Cropland pop points joined to district boundaries.\n')
+# Export the cropland points by district
+sum_crpop_districts.to_feather(sum_crpop_districts_path)  
+
+print(f'Cropland pop points joined to district boundaries and exported to {sfmt}.\n')
 timestamp(time_34s)
 
 
@@ -239,7 +248,7 @@ dlist = ['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3','d_adp4', 'd_adp5']
 
 masterdf.drop(columns='geometry', inplace=True)
 
-masterdf.columns
+# masterdf.columns
 masterdf.head()
 
 # Export masterdf to csv
@@ -248,8 +257,91 @@ masterdf.to_csv(masterdf_path, index=False)
 print('Master results file exported to csv.\n')
 
 
+
 # ==================================================================================================================
-# 6. CALCULATE VARIATION IN ADP ESTIMATES
+# 6. BUFFER ITERATION
+
+# PROCESS:
+#       1. Create a list of districts within the state to compute buffers for 
+#       2. Initialise a dictionary that will contain district code as key, and buffer radius as values
+#       3. Calculate sum of population points within new buffer radius 
+#       4. Check if the new calculation meets criteria
+
+# List of district codes
+buffer_districts = district_codes[district_codes['State Code']==state_code]
+buffer_d_list = buffer_districts['District Code'].tolist()
+
+# Let's create a dictionary that contains the district name as key and the final buffer radius as values
+buffer_r_dict = {}
+    # Initialise the dictionary with zero values:
+for y in buffer_d_list:
+        buffer_r_dict[y] = 0
+
+
+# TODO: NEXT STEPS
+#       Need to systematise the buffer code to iterate through districts (currently fixed to single code)
+#       THEN need to add in a filter system to only select desired rows
+#       i.e. only run positive buffer on neg d_pc districts; write a declining buffer for the opposite set. 
+#       ALSO think further about exclusion of irregular districts (too urban, too small cropland, etc.)
+
+# List of district codes
+buffer_districts = district_codes[district_codes['State Code']==state_code]
+buffer_d_list = buffer_districts['District Code'].tolist()
+
+# Define a function to create a buffer and recalculate the ADP estimate
+# Where:
+# district_shp = districts_shp
+# crops_shp = gdf_crops
+# pop_points = gdf_pop
+# district_code = string format of district code
+# buffer_radius = OPTIONAL
+def enlarge_buffer(districts_shp, crops_shp, pop_points, district_code, buffer_radius):
+        time_buff = time.time()
+        district_boundary = districts_shp.loc[districts_shp['pc11_d_id'] == district_code]
+        crop_by_district_boundary = gpd.overlay(crops_shp, district_boundary, how='intersection')
+
+        # Convert to a Geoseries
+        district_series = crop_by_district_boundary['geometry']
+
+        # Calculate buffer
+        d_buffer = district_series.buffer(buffer_radius)
+        d_buffer.name = 'geometry'
+
+        # Calculate the worlpop rural points within the buffer zone 
+        d_buffer_gdf = gpd.GeoDataFrame(d_buffer, crs="EPSG:4326", geometry='geometry')
+
+        # Join points to GHSL
+        pop_points_buffer = pop_points.sjoin(d_buffer_gdf, how='inner', predicate='within')
+        pop_points_buffer = pop_points_buffer.drop(columns='index_right')
+
+        # Dissolve points to calculate aggregated population for district
+        sum_buffer_points = pop_points_buffer.dissolve(as_index=False, aggfunc={'raster_value':'sum'})
+        sum_buffer_points['raster_value'] = sum_buffer_points['raster_value'].round()
+
+        # Add district code and buffer radius to geodataframe
+        sum_buffer_points['pc11_d_id'] = district_code
+        sum_buffer_points['buffer_r'] = buffer_radius
+
+        print(f'Rural pop points joined to buffer area and new ADP calculated.\n')
+        timestamp(time_buff)
+        return sum_buffer_points
+
+# Test function
+sum_buffer_300 = enlarge_buffer(districts_shp, gdf_crops, gdf_pop, '300', 0.0001)
+
+
+# Let's create a dictionary that contains the district name as key and the final buffer radius as values
+buffer_r_dict = {}
+    # Initialise the dictionary with zero values:
+for y in buffer_d_list:
+        buffer_r_dict[y] = 0
+
+
+
+
+
+# ==================================================================================================================
+# 7. PLOT FIGURES
 
 # NOTE: SNS plot syntax does not require long data; therefore can remove this section (2023-08-02)
 # # pivot master df into a long format, for stats and plotting by ADP group
@@ -271,7 +363,8 @@ print('Master results file exported to csv.\n')
 masterdf_bplot = masterdf[['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5']]
 masterdf_bplot_pc = masterdf[['d_pc0', 'd_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5']]
 
-# Plot figures
+# ==================================
+# Plot figures: BOXPLOT
 # Apply the default theme
 fig, axes = plt.subplots(2, 1, figsize=(12, 8))
 # create chart in each subplot
@@ -290,6 +383,10 @@ plt.savefig(bplot_adp, dpi=600, facecolor="white", bbox_inches="tight")
 # display figure
 plt.show()
 
+
+# ==================================
+# Plot figures: DISTRIBUTION PLOT
+# Trial Kernel density estimates of ADP results? 
 
 # Plot standalone figures
 # fig, ax = plt.subplots(figsize=(12, 8))

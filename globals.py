@@ -27,7 +27,7 @@ scale = '100m'
 
 # 3. Set state (or list of states) to work with 
 # state_name = 'Karnataka'
-state_code = '14'             # code taken from Census India
+state_code = '18'             # code taken from Census India
 
 # NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
 #       Maybe not a priority in the time remaining; won't have any effect on final submission 
@@ -46,9 +46,12 @@ worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation,
 sfmt = '.feather'    # geofeather
 
 # 7. Set whether to use Total, Rural or Urban counts from census population tables
-# tru_cat = 'Total'
-tru_cat = 'Rural'
+tru_cat = 'Total'                   # Preference for using TOTAL count, due to disjunction between census and DW classifications of 'rural'
+# tru_cat = 'Rural'
 # tru_cat = 'Urban'
+
+# 8. Set buffer increment distance
+r_buffer = 100
 # ********************************************
 
 
@@ -135,6 +138,10 @@ pop_tif_clipped =           os.path.join(outputfolder, 'intermediates', 'worldpo
 pop_points =                os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}{sfmt}')
 pop_points_rural_path =     os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_rural{sfmt}')
 pop_points_cropland_path =  os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_cropland{sfmt}')
+
+sum_pop_districts_path =    os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_bydistrict{sfmt}')
+sum_rupop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_rural_bydistrict{sfmt}')
+sum_crpop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}_cropland_bydistrict{sfmt}')
 
 # Output files
 # These file paths store the final output files used in the Results section
