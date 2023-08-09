@@ -289,12 +289,12 @@ print('Master results file exported to csv.\n')
 # 6.1 Define a function to create a buffer and recalculate the ADP estimate
 
 # Where:
-# district_shp = districts_shp
-# crops_shp = gdf_crops
-# rural_points = pop_points_rural
-# district_code = string format of district code
-# buffer_radius = set accordingly; default 100m
-# buffer_type = 'enlarge' or 'reduce'
+# 1. district_shp = districts_shp   
+# 2. crops_shp = gdf_crops
+# 3. rural_points = pop_points_rural
+# 4. district_code = string format of district code
+# 5. buffer_radius = set accordingly; default 50m
+# 6. buffer_type = 'enlarge' or 'reduce'
 def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffer_radius, buffer_type):
         time_buff = time.time()
         print('Creating ' + str(buffer_radius) + 'm buffers on crop lands for district: ' + district_code)
@@ -309,10 +309,11 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         # Convert buffer metre input into degrees (WGS84)
         if buffer_type == 'enlarge':
                 degrees = buffer_radius * (0.00001/1.11)
-        elif buffer_type == 'reduce':
-                degrees = buffer_radius * (-0.00001/1.11)       # negative buffer radius = reduction in size
+        elif buffer_type == 'subtract':
+                buffer_radius = buffer_radius * -1              # negative buffer radius = reduction in size
+                degrees = buffer_radius * (0.00001/1.11)       
         elif buffer_type == 'unchanged':
-                degrees = 0     # No buffer required (type == 'unchanged')
+                degrees = 0                                     # No buffer required (type == 'unchanged')
         else: 
                 degrees = 0     
 
@@ -336,22 +337,22 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         print(f'Rural pop points joined to buffer area and new ADP calculated.')
 
         # Merge census data from masterdf
-        check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', 'ADPc3_pctotal']], how='left', on='pc11_d_id')
+        check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', 'ADPc3_pctotal', 'need_buffer']], how='left', on='pc11_d_id')
 
         check_buffer['buffered_pctotal'] = check_buffer['raster_value']/check_buffer['Population']*100
         check_buffer['d_bufferedpc'] = check_buffer['ADPc3_pctotal'] - check_buffer['buffered_pctotal']
 
         # Next apply conditional rows to each row of masterdf
-        check_buffer['need_buffer'] = check_buffer.apply(lambda row: categorise_buffer(row, 'd_bufferedpc'), axis=1)
+        check_buffer['revised_buffer'] = check_buffer.apply(lambda row: buffer_logic(row, 'need_buffer', 'd_bufferedpc'), axis=1)
 
         timestamp(time_buff)
         return check_buffer
 
 # TEST RUN
-sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '572', 50, 'unchanged')
+sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '583', 50, 'subtract')
 
 # TEST ZERO BUFFER
-sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '573', 0, 'enlarge')
+sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', 0, 'enlarge')
 
 
 # =====================
@@ -364,48 +365,56 @@ buffer_gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
 # Create a dictionary of the districts
 buffer_dict = dict(zip(masterdf['pc11_d_id'], masterdf['need_buffer']))
 
-# buffer_districts = masterdf[masterdf['need_buffer']=='enlarge']
-# buffer_d_list = masterdf['pc11_d_id'].tolist()
+# TEST LOOP THROUGH DICTIONARY
+buffer_dict = {'581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
 
-# Create for loop to iterate through buffer process
-# NOTE: CURRENT ERROR IN WHILE LOOPS. NOT SUCCEEDING IN HAVING THE CONDITION UPDATE AND CEASE ACCORDINGLY. 
+# NOTE: Loop below works to run a single iteration of the buffer function for each district
+# time_buffer = time.time()
 # for key, value in buffer_dict.items():
-#         buffer_radius = 50
-#         while sum_buffer_gdf['need_buffer'].item() != 'unchanged':
-#                 if value == 'enlarge':
-#                         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
-#                         print('buffer radius: ' + buffer_radius + ' ' + sum_buffer_gdf['need_buffer'].item())
-#                         buffer_radius = buffer_radius * 2
-#                 elif value == 'reduce': 
-#                         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'reduce')
-#                         print('buffer radius: ' + buffer_radius + ' ' + sum_buffer_gdf['need_buffer'].item())
-#                         buffer_radius = buffer_radius / 2
-#                 else:
-#                         break
-#         # Make sure dataframes have the same crs
+#         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, 50, value)
 #         sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
 #         # Concatenate output for each district into a single dataframe
 #         buffer_gdf = pd.concat([sum_buffer_gdf, buffer_gdf])
 
+# buffer_gdf
+# timestamp(time_buffer)
 
-# TEST LOOP THROUGH DICTIONARY
-buffer_dict = {'570': 'enlarge', '572': 'unchanged', '573': 'reduce'}
 
+# Create for loop to iterate through buffer process
+# NOTE: CURRENT ERROR IN WHILE LOOPS. NOT SUCCEEDING IN HAVING THE CONDITION UPDATE AND CEASE ACCORDINGLY. 
+time_buffer = time.time()
+df = pd.DataFrame(columns=['raster_value', 'pc11_d_id', 'buffer_r', 'geometry'])
+df['buffer_r'] = df['buffer_r'].astype(int)
+buffer_gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
 for key, value in buffer_dict.items():
-        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, 50, value)
+        buffer_radius = 100
+        while sum_buffer_gdf['need_buffer'].item() != 'unchanged':
+                if value == 'enlarge':
+                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
+                        print('buffer radius: ' + buffer_radius + ' ' + sum_buffer_gdf['need_buffer'].item())
+                        buffer_radius = buffer_radius * 2       # increase the size of buffer for next iteration
+                        buffer_dict[key]='enlarge'              # update the value in dictionary for next iteration
+                elif value == 'subtract': 
+                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
+                        print('buffer radius: ' + buffer_radius + ' ' + sum_buffer_gdf['need_buffer'].item())
+                        buffer_radius = buffer_radius / 4       # reduce the size of buffer for next iteration
+                        buffer_dict[key]='subtract'             # update the value in dictionary for next iteration
+                else:
+                        break
+        # Make sure dataframes have the same crs
         sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
         # Concatenate output for each district into a single dataframe
         buffer_gdf = pd.concat([sum_buffer_gdf, buffer_gdf])
-
-buffer_gdf
-
+timestamp(time_buffer)
 
 
-check_buffer = buffer_gdf.merge(masterdf[['pc11_d_id', 'Population', 'ADPc3_pctotal']], how='left', on='pc11_d_id')
 
+# Export buffer_gdf to .feather
+buffer_gdf.to_feather(buffergdf_path)
 
-# Export masterdf to csv
-# buffer_df.to_csv(bufferdf_path, index=False)
+# Export buffer_df to csv
+buffer_df = pd.DataFrame(buffer_gdf.drop(columns = 'geometry'))
+buffer_df.to_csv(bufferdf_path, index=False)
 
 # ********
 # TODO: 

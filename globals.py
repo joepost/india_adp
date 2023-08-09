@@ -58,6 +58,7 @@ r_buffer = 100
 # ==================================================================================================================
 # FUNCTIONS
 
+# Print the elapsed computation time of a section of code
 def timestamp(initial_time):
     end_time = time.time()
     elapsed_time = end_time - initial_time
@@ -66,21 +67,56 @@ def timestamp(initial_time):
     else:
         print('Elapsed time: ', round(elapsed_time, 1), ' seconds.\n')
 
-
+# Convert a string into snake case (used for conversion of state names)
 def snake_case(s):
   return '_'.join(
     sub('([A-Z][a-z]+)', r' \1',
     sub('([A-Z]+)', r' \1',
     s.replace('-', ' '))).split()).lower()
 
-
+# For the initial classification of ADP results, categorise districts on whether a buffer is required, and in which direction
 def categorise_buffer(row, column):
     if row[column] < -5:
-        return 'reduce'
+        return 'subtract'
     elif row[column] > 5:
            return 'enlarge'
     else:
         return 'unchanged'
+
+# For the iterative buffer process, classify if districts need:
+def buffer_logic(row, need_buffer, revised_diff): 
+    if row[need_buffer] == 'enlarge':
+        if row[revised_diff] > 5:           #   1. To enlarge the buffer further (ADPa still too low)
+            return 'enlarge'
+        elif row[revised_diff] < -5:        #   2. To enlarge using a smaller buffer radius (revised ADPa too high)
+            return 'overenlarged'
+        else:
+            return 'unchanged'
+    elif row[need_buffer] == 'subtract':   #   3. To subtract the buffer further (ADPa still too high)
+         if row[revised_diff] > 5:
+            return 'subtract'
+         elif row[revised_diff] < -5:       #   4. To subtract using a smaller buffer radius (revised ADPa too low)
+            return 'oversubtracted'
+         else:
+            return 'unchanged'
+    else:
+        return 'unchanged'                  #   5. To complete the buffer iteration process (5% threshold reached)
+    
+
+# def buffer_logic(row, need_buffer, revised_diff): 
+#     if row[need_buffer] == 'enlarge':
+#         if row[revised_diff] > 5: 
+#             return 'increase enlargement'
+#         elif row[revised_diff] < -5:
+#             return 'decrease enlargement'
+#     elif row[need_buffer] == 'subtract':   #   3. To subtract the buffer further (ADPa still too high)
+#          if row[revised_diff] > 5:
+#             return 'increase subtraction'
+#          elif row[revised_diff] < -5:       #   4. To subtract using a smaller buffer radius (revised ADPa too low)
+#             return 'decrease subtraction'
+#     else:
+#         return 'unchanged'
+
 
 
 # ==================================================================================================================
@@ -156,6 +192,7 @@ sum_crpop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpo
 # Output files
 # These file paths store the final output files used in the Results section
 masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}.csv')
-# bufferdf_path =      os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}.csv')
+buffergdf_path =      os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}{sfmt}')
+bufferdf_path =      os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}.csv')
 bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')
 
