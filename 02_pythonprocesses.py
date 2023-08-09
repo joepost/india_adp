@@ -270,18 +270,10 @@ masterdf.drop(columns='geometry', inplace=True)
 masterdf.head()
 
 # Add column to flag districts that need a buffer
-# First, define function with conditional rules
-# NOTE: Currently running using ADP3 as main measurement; CHANGE THIS IF NEEDED
-def categorize_buffer(row):
-    if row['d_pc3'] < -5:
-        return 'enlarge'
-    elif row['d_pc3'] > 5:
-           return 'reduce'
-    else:
-        return 'unchanged'
+# Use defined function with conditional rules: categorise_buffer
 
 # Next apply conditional rows to each row of masterdf
-masterdf['need_buffer'] = masterdf.apply(categorize_buffer, axis=1)
+masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc3'), axis=1)
 
 # Export masterdf to csv
 masterdf.to_csv(masterdf_path, index=False)
@@ -303,62 +295,102 @@ print('Master results file exported to csv.\n')
 buffer_districts = masterdf[masterdf['need_buffer']=='enlarge']
 buffer_d_list = buffer_districts['pc11_d_id'].tolist()
 
-# Define a function to create a buffer and recalculate the ADP estimate
+# =====================
+# 6.1 Define a function to create a buffer and recalculate the ADP estimate
+
 # Where:
 # district_shp = districts_shp
 # crops_shp = gdf_crops
-# pop_points = gdf_pop
+# rural_points = pop_points_rural
 # district_code = string format of district code
 # buffer_radius = OPTIONAL
-def enlarge_buffer(districts_shp, crops_shp, pop_points, district_code, buffer_radius):
+def enlarge_buffer(districts_shp, crops_shp, rural_points, district_code, buffer_radius):
         time_buff = time.time()
+        print('Creating ' + str(buffer_radius) + 'm buffers on crop lands for district: ' + district_code)
+
+        # Define district boundaries
         district_boundary = districts_shp.loc[districts_shp['pc11_d_id'] == district_code]
         crop_by_district_boundary = gpd.overlay(crops_shp, district_boundary, how='intersection')
 
         # Convert to a Geoseries
         district_series = crop_by_district_boundary['geometry']
 
+        # Convert buffer metre input into degrees (WGS84)
+        degrees = buffer_radius * (0.00001/1.11)
+
         # Calculate buffer
-        d_buffer = district_series.buffer(buffer_radius)
+        d_buffer = district_series.buffer(degrees)
         d_buffer.name = 'geometry'
 
         # Calculate the worlpop rural points within the buffer zone 
         d_buffer_gdf = gpd.GeoDataFrame(d_buffer, crs="EPSG:4326", geometry='geometry')
 
-        # Join points to GHSL
-        pop_points_buffer = pop_points.sjoin(d_buffer_gdf, how='inner', predicate='within')
-        pop_points_buffer = pop_points_buffer.drop(columns='index_right')
+        # Join rural points to buffer zone
+        ru_points_buffer = rural_points.sjoin(d_buffer_gdf, how='inner', predicate='within')
+        ru_points_buffer = ru_points_buffer.drop(columns='index_right')
 
         # Dissolve points to calculate aggregated population for district
-        sum_buffer_points = pop_points_buffer.dissolve(as_index=False, aggfunc={'raster_value':'sum'})
+        sum_buffer_points = ru_points_buffer.dissolve(as_index=False, aggfunc={'raster_value':'sum'})
         sum_buffer_points['raster_value'] = sum_buffer_points['raster_value'].round()
 
         # Add district code and buffer radius to geodataframe
         sum_buffer_points['pc11_d_id'] = district_code
         sum_buffer_points['buffer_r'] = buffer_radius
 
-        print(f'Rural pop points joined to buffer area and new ADP calculated.\n')
-        timestamp(time_buff)
-        return sum_buffer_points
+        print(f'Rural pop points joined to buffer area and new ADP calculated.')
 
-# Run function over set of districts and combine outputs into a single GeoDataframe
-# First, create an empty GDF
+        # Merge census data from masterdf
+        check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', 'ADPc3_pctotal']], how='left', on='pc11_d_id')
+
+        check_buffer['buffered_pctotal'] = check_buffer['raster_value']/check_buffer['Population']*100
+        check_buffer['d_bufferedpc'] = check_buffer['ADPc3_pctotal'] - check_buffer['buffered_pctotal']
+
+        # Next apply conditional rows to each row of masterdf
+        check_buffer['need_buffer'] = check_buffer.apply(lambda row: categorise_buffer(row, 'd_bufferedpc'), axis=1)
+
+        timestamp(time_buff)
+        return check_buffer
+
+# TEST RUN
+sum_buffer_gdf = enlarge_buffer(districts_shp, gdf_crops, pop_points_rural, '573', 50)
+
+
+# =====================
+# 6.2 Run function over set of districts and combine outputs into a single GeoDataframe
+
+# First, create an empty GDF to store the output as a row for each district
 df = pd.DataFrame(columns=['raster_value', 'pc11_d_id', 'buffer_r', 'geometry'])
 buffer_gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
 # Run through district list
 for y in buffer_d_list:
-        sum_buffer_gdf = enlarge_buffer(districts_shp, gdf_crops, gdf_pop, y, 0.0001)
+        sum_buffer_gdf = enlarge_buffer(districts_shp, gdf_crops, pop_points_rural, y, 50)
         sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
+        # Concatenate output for each district into a single dataframe
         buffer_gdf = pd.concat([sum_buffer_gdf, buffer_gdf])
 
 buffer_gdf
 
-# Merge ADP estimate to buffer values and recalculate d_pc3
-df = masterdf[['pc11_d_id', 'd_name', 'ADP3', 'worldpop_crop', 'd_adp3', 'd_pc3']]
-check_buffer = buffer_gdf.merge(df, how='left', on='pc11_d_id')
-check_buffer['d_pc3_new'] = round(100 - check_buffer['ADP3']/check_buffer['raster_value']*100,2)
+# NOTE: REMOVE BELOW >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# # Merge ADP estimate to buffer values and recalculate d_pc3
+# df = masterdf[['pc11_d_id', 'Population', 'ADPc3_pctotal']]
+# check_buffer = buffer_gdf.merge(df, how='left', on='pc11_d_id')
+# check_buffer['buffered_pctotal'] = check_buffer['raster_value']/check_buffer['Population']*100
+# check_buffer['d_bufferedpc'] = check_buffer['ADPc3_pctotal'] - check_buffer['buffered_pctotal']
+# buffer_df = pd.DataFrame(check_buffer.drop(columns='geometry'))
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+check_buffer = buffer_gdf.merge(masterdf[['pc11_d_id', 'Population', 'ADPc3_pctotal']], how='left', on='pc11_d_id')
+
+
+# Export masterdf to csv
+# buffer_df.to_csv(bufferdf_path, index=False)
+
+# ********
+# TODO: 
+# Before running for next set of buffers, need to finish output of buffer process;
+# i.e. export new masterdf results to csv
+# Also need to add iteration step; how are the buffer results checked, and the outputs fed back into the function? 
 
 
 

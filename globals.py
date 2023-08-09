@@ -27,7 +27,7 @@ scale = '100m'
 
 # 3. Set state (or list of states) to work with 
 # state_name = 'Karnataka'
-state_code = '18'             # code taken from Census India
+state_code = '29'             # code taken from Census India
 
 # NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
 #       Maybe not a priority in the time remaining; won't have any effect on final submission 
@@ -72,6 +72,16 @@ def snake_case(s):
     sub('([A-Z][a-z]+)', r' \1',
     sub('([A-Z]+)', r' \1',
     s.replace('-', ' '))).split()).lower()
+
+
+def categorise_buffer(row, column):
+    if row[column] < -5:
+        return 'reduce'
+    elif row[column] > 5:
+           return 'enlarge'
+    else:
+        return 'unchanged'
+
 
 # ==================================================================================================================
 # FILE PATHS
@@ -146,5 +156,6 @@ sum_crpop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpo
 # Output files
 # These file paths store the final output files used in the Results section
 masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}.csv')
+# bufferdf_path =      os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}.csv')
 bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')
 
