@@ -234,32 +234,22 @@ masterdf['ADPa_pctotal'] = masterdf['worldpop_crop']/masterdf['Population']*100
 
 # Calculate difference between Worldpop cropland population and ADP1
 masterdf['ADPc1_pctotal'] = masterdf['ADP1']/masterdf['Population']*100
-# masterdf['d_adp1'] = masterdf['worldpop_crop'] - masterdf['ADP1']
-# masterdf['d_pc1'] = round(100 - masterdf['ADP1']/masterdf['worldpop_crop']*100,2)
 masterdf['d_pc1'] = masterdf['ADPc1_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP2
 masterdf['ADPc2_pctotal'] = masterdf['ADP2']/masterdf['Population']*100
-# masterdf['d_adp2'] = masterdf['worldpop_crop'] - masterdf['ADP2']
-# masterdf['d_pc2'] = round(100 - masterdf['ADP2']/masterdf['worldpop_crop']*100,2)
 masterdf['d_pc2'] = masterdf['ADPc2_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP3
 masterdf['ADPc3_pctotal'] = masterdf['ADP3']/masterdf['Population']*100
-# masterdf['d_adp3'] = masterdf['worldpop_crop'] - masterdf['ADP3']
-# masterdf['d_pc3'] = round(100 - masterdf['ADP3']/masterdf['worldpop_crop']*100,2)
 masterdf['d_pc3'] = masterdf['ADPc3_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP4
 masterdf['ADPc4_pctotal'] = masterdf['ADP4']/masterdf['Population']*100
-# masterdf['d_adp4'] = masterdf['worldpop_crop'] - masterdf['ADP4']
-# masterdf['d_pc4'] = round(100 - masterdf['ADP4']/masterdf['worldpop_crop']*100,2)
 masterdf['d_pc4'] = masterdf['ADPc4_pctotal'] - masterdf['ADPa_pctotal']
 
 # Calculate difference between Worldpop cropland population and ADP5
 masterdf['ADPc5_pctotal'] = masterdf['ADP5']/masterdf['Population']*100
-# masterdf['d_adp5'] = masterdf['worldpop_crop'] - masterdf['ADP5']
-# masterdf['d_pc5'] = round(100 - masterdf['ADP5']/masterdf['worldpop_crop']*100,2)
 masterdf['d_pc5'] = masterdf['ADPc5_pctotal'] - masterdf['ADPa_pctotal']
 
 dlist = ['d_poptotals', 'd_pc1', 'd_pc2', 'd_pc3','d_pc4', 'd_pc5']
@@ -383,29 +373,48 @@ buffer_dict = {'581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': '
 # Create for loop to iterate through buffer process
 # NOTE: CURRENT ERROR IN WHILE LOOPS. NOT SUCCEEDING IN HAVING THE CONDITION UPDATE AND CEASE ACCORDINGLY. 
 time_buffer = time.time()
+# 1. Create empty dataframe to store results for each district
 df = pd.DataFrame(columns=['raster_value', 'pc11_d_id', 'buffer_r', 'geometry'])
 df['buffer_r'] = df['buffer_r'].astype(int)
 buffer_gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
+# 2. Run for loop (loop through each district)
 for key, value in buffer_dict.items():
         buffer_radius = 100
-        while sum_buffer_gdf['need_buffer'].item() != 'unchanged':
-                if value == 'enlarge':
+        # Run initial buffer function 
+        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
+        # 3. Run while loop (iterate over a single district until threshold is met)
+        while abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5:
+                # TODO: need to change 'value' as input here; the actual input of interest 'revised_buffer'
+                # How should I structure to use 'need_buffer' as first input, and 'revised_buffer' as iterative input?
+                if value in ['enlarge', 'subtract']:
+                        buffer_radius = buffer_radius * 2                               # increase the size of buffer for next iteration
+                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
+                        # print('District ' + key + 'buffer radius: ' + str(buffer_radius) + 'm ' + sum_buffer_gdf['need_buffer'].item())
+                        # buffer_dict[key]=sum_buffer_gdf['revised_buffer'].item()        # update the value in dictionary for next iteration
+                        value = sum_buffer_gdf['revised_buffer'].item()                 # Redefine 'value' to take the revised buffer status
+                elif value == 'overenlarged': 
+                        buffer_radius = buffer_radius / 4                               # reduce the size of buffer for next iteration
                         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
-                        print('buffer radius: ' + buffer_radius + ' ' + sum_buffer_gdf['need_buffer'].item())
-                        buffer_radius = buffer_radius * 2       # increase the size of buffer for next iteration
-                        buffer_dict[key]='enlarge'              # update the value in dictionary for next iteration
-                elif value == 'subtract': 
+                        # print('buffer radius: ' + str(buffer_radius) + ' ' + sum_buffer_gdf['need_buffer'].item())
+                        value = sum_buffer_gdf['revised_buffer'].item()         # update the value in dictionary for next iteration
+                elif value == 'oversubtracted':
+                        buffer_radius = buffer_radius / 4                               # reduce the size of buffer for next iteration
                         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
-                        print('buffer radius: ' + buffer_radius + ' ' + sum_buffer_gdf['need_buffer'].item())
-                        buffer_radius = buffer_radius / 4       # reduce the size of buffer for next iteration
-                        buffer_dict[key]='subtract'             # update the value in dictionary for next iteration
-                else:
-                        break
-        # Make sure dataframes have the same crs
-        sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
+                        # print('buffer radius: ' + str(buffer_radius) + ' ' + sum_buffer_gdf['need_buffer'].item())
+                        value = sum_buffer_gdf['revised_buffer'].item()        # update the value in dictionary for next iteration
+                # else:
+                #         # break
+                #         # Make sure dataframes have the same crs
+                #         sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
+                        # print('District ' + key + ' buffer iteration complete.')
         # Concatenate output for each district into a single dataframe
+        sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
         buffer_gdf = pd.concat([sum_buffer_gdf, buffer_gdf])
+        # Remove duplicates (added in iteration process)
+        buffer_gdf.drop_duplicates(subset='pc11_d_id', inplace=True)
+buffer_gdf
 timestamp(time_buffer)
+
 
 
 

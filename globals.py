@@ -94,9 +94,9 @@ def buffer_logic(row, need_buffer, revised_diff):
             return 'unchanged'
     elif row[need_buffer] == 'subtract':   #   3. To subtract the buffer further (ADPa still too high)
          if row[revised_diff] > 5:
-            return 'subtract'
-         elif row[revised_diff] < -5:       #   4. To subtract using a smaller buffer radius (revised ADPa too low)
             return 'oversubtracted'
+         elif row[revised_diff] < -5:       #   4. To subtract using a smaller buffer radius (revised ADPa too low)
+            return 'subtract'
          else:
             return 'unchanged'
     else:
