@@ -50,8 +50,9 @@ tru_cat = 'Total'                   # Preference for using TOTAL count, due to d
 # tru_cat = 'Rural'
 # tru_cat = 'Urban'
 
-# 8. Set buffer increment distance
-r_buffer = 100
+# 8. Set ADP definition for further analysis 
+# ADPcn = 'ADPc3'
+ADPcn = 'ADPc5'
 # ********************************************
 
 
@@ -108,23 +109,7 @@ def buffer_logic(row, need_buffer, revised_diff):
             return 'unchanged'
     else:
         return 'unchanged'                  #   5. To complete the buffer iteration process (5% threshold reached)
-    
-
-# def buffer_logic(row, need_buffer, revised_diff): 
-#     if row[need_buffer] == 'enlarge':
-#         if row[revised_diff] > 5: 
-#             return 'increase enlargement'
-#         elif row[revised_diff] < -5:
-#             return 'decrease enlargement'
-#     elif row[need_buffer] == 'subtract':   #   3. To subtract the buffer further (ADPa still too high)
-#          if row[revised_diff] > 5:
-#             return 'increase subtraction'
-#          elif row[revised_diff] < -5:       #   4. To subtract using a smaller buffer radius (revised ADPa too low)
-#             return 'decrease subtraction'
-#     else:
-#         return 'unchanged'
-
-
+  
 
 # ==================================================================================================================
 # FILE PATHS
@@ -198,8 +183,8 @@ sum_crpop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpo
 
 # Output files
 # These file paths store the final output files used in the Results section
-masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}.csv')
-buffergdf_path =      os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}{sfmt}')
-bufferdf_path =      os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}.csv')
+masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}_{ADPcn}.csv')
+buffergdf_path =      os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}{sfmt}')
+bufferdf_path =      os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.csv')
 bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')
 

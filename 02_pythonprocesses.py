@@ -331,10 +331,15 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         print(f'Rural pop points joined to buffer area and new ADP calculated.')
 
         # Merge census data from masterdf
-        check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', 'ADPc3_pctotal', 'need_buffer']], how='left', on='pc11_d_id')
+        if ADPcn == 'ADPc3':
+                ADPcn_pctotal = 'ADPc3_pctotal'
+        elif ADPcn == 'ADPc5':
+                ADPcn_pctotal = 'ADPc5_pctotal'
+        
+        check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', ADPcn_pctotal, 'need_buffer']], how='left', on='pc11_d_id')
 
         check_buffer['buffered_pctotal'] = check_buffer['raster_value']/check_buffer['Population']*100
-        check_buffer['d_bufferedpc'] = check_buffer['ADPc3_pctotal'] - check_buffer['buffered_pctotal']
+        check_buffer['d_bufferedpc'] = check_buffer[ADPcn_pctotal] - check_buffer['buffered_pctotal']
 
         # Next apply conditional rows to each row of masterdf
         check_buffer['revised_buffer'] = check_buffer.apply(lambda row: buffer_logic(row, 'need_buffer', 'd_bufferedpc'), axis=1)
