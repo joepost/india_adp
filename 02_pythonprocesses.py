@@ -263,7 +263,10 @@ masterdf.head()
 # Use defined function with conditional rules: categorise_buffer
 
 # Next apply conditional rows to each row of masterdf
-masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc3'), axis=1)
+if ADPcn == 'ADPc3':
+        masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc3'), axis=1)
+elif ADPcn == 'ADPc5':
+        masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc5'), axis=1)
 
 # Export masterdf to csv
 masterdf.to_csv(masterdf_path, index=False)
@@ -357,7 +360,7 @@ time_buffer = time.time()
 buffer_dict = dict(zip(masterdf['pc11_d_id'], masterdf['need_buffer']))
 
 # TEST LOOP THROUGH DICTIONARY
-buffer_dict = {'577': 'subtract', '581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
+# buffer_dict = {'577': 'subtract', '581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
 
 
 
@@ -366,44 +369,43 @@ buffer_gdf_list = []
 
 # 2. Run for loop (loop through each district)
 for key, value in buffer_dict.items():
-        buffer_radius = 100
+        buffer_radius = 50
         iteration_count = 0
         
         # Run initial buffer function 
         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
         print('1st Run: District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
+        print('d_bufferedpc: ' + str(round(sum_buffer_gdf['d_bufferedpc'].item(),2)))
         # 3. Run while loop (iterate over a single district until threshold is met)
-        if value != 'unchanged':
-                while abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5:
-                        while iteration_count <= 5:
-                                if sum_buffer_gdf['revised_buffer'].item() in ['enlarge', 'subtract']:
-                                        # buffer_radius = buffer_radius * 2       # increase the size of buffer for next iteration
-                                        buffer_radius = buffer_radius + (buffer_radius/2)
-                                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
-                                        print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
-                                        iteration_count = iteration_count + 1
-                                elif sum_buffer_gdf['revised_buffer'].item() == 'overenlarged': 
-                                        # buffer_radius = buffer_radius - 50                               # reduce the size of buffer for next iteration
-                                        buffer_radius = buffer_radius - (buffer_radius/2)
-                                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
-                                        print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
-                                        iteration_count = iteration_count + 1
-                                elif sum_buffer_gdf['revised_buffer'].item() == 'oversubtracted': 
-                                        # buffer_radius = buffer_radius - 50                               # reduce the size of buffer for next iteration
-                                        buffer_radius = buffer_radius - (buffer_radius/2)
-                                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
-                                        print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
-                                        iteration_count = iteration_count + 1
+        while abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5:
+                # while iteration_count <= 5:
+                if value == 'unchanged':                # Ensures districts that are initially within threshold do not run through 
+                                                        #  the buffer iteration process
+                        break
+                elif sum_buffer_gdf['revised_buffer'].item() in ['enlarge', 'subtract']:
+                        buffer_radius = round(buffer_radius + (buffer_radius/2))
+                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
+                elif sum_buffer_gdf['revised_buffer'].item() == 'overenlarged': 
+                        buffer_radius = round(buffer_radius - (buffer_radius/2))
+                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
+                elif sum_buffer_gdf['revised_buffer'].item() == 'oversubtracted': 
+                        buffer_radius = round(buffer_radius - (buffer_radius/2))
+                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
+                        
+                print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
+                print('d_bufferedpc: ' + str(round(sum_buffer_gdf['d_bufferedpc'].item(),2)))
+                iteration_count = iteration_count + 1
+
         # Append the single-row GeoDataFrame to the list
         buffer_gdf_list.append(sum_buffer_gdf)
-        print('*** District ' + key + ' complete. ***\n')
+        print('*** District ' + key + ' complete. ***\n Iterations: ' + str(iteration_count) + '\n')
 
 timestamp(time_buffer)
 
 # Concatenate all GeoDataFrames in the list
 buffer_gdf = pd.concat(buffer_gdf_list)
 # Drop duplicates based on 'pc11_d_id'
-buffer_gdf.drop_duplicates(subset='pc11_d_id', inplace=True)
+# buffer_gdf.drop_duplicates(subset='pc11_d_id', inplace=True)
 # Reset index
 buffer_gdf.reset_index(drop=True, inplace=True)
 # Display the final GeoDataFrame
@@ -416,13 +418,6 @@ buffer_gdf.to_feather(buffergdf_path)
 # Export buffer_df to csv
 buffer_df = pd.DataFrame(buffer_gdf.drop(columns = 'geometry'))
 buffer_df.to_csv(bufferdf_path, index=False)
-
-# ********
-# TODO: 
-# Before running for next set of buffers, need to finish output of buffer process;
-# i.e. export new masterdf results to csv
-# Also need to add iteration step; how are the buffer results checked, and the outputs fed back into the function? 
-
 
 
 # ==================================================================================================================
