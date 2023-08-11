@@ -287,7 +287,6 @@ print('Master results file exported to csv.\n')
 # 6. buffer_type = 'enlarge' or 'reduce'
 def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffer_radius, buffer_type):
         time_buff = time.time()
-        print('Creating ' + str(buffer_radius) + 'm buffers on crop lands for district: ' + district_code)
 
         # Define district boundaries
         district_boundary = districts_shp.loc[districts_shp['pc11_d_id'] == district_code]
@@ -305,7 +304,9 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         elif buffer_type == 'unchanged':
                 degrees = 0                                     # No buffer required (type == 'unchanged')
         else: 
-                degrees = 0     
+                degrees = 0   
+
+        print('Creating ' + str(buffer_radius) + 'm buffers on crop lands for district: ' + district_code)  
 
         # Calculate buffer
         d_buffer = district_series.buffer(degrees)
@@ -338,84 +339,75 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         timestamp(time_buff)
         return check_buffer
 
-# TEST RUN
-sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '583', 50, 'subtract')
+# # TEST RUN
+# sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '583', 50, 'subtract')
 
-# TEST ZERO BUFFER
-sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', 0, 'enlarge')
+# # TEST ZERO BUFFER
+# sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', 0, 'enlarge')
+
+# # TEST INPUT 'UNCHANGED'
+# sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', 400, 'enlarge')
 
 
 # =====================
 # 6.2 Run function over set of districts and combine outputs into a single GeoDataframe
-
-# First, create an empty GDF to store the output as a row for each district
-df = pd.DataFrame(columns=['raster_value', 'pc11_d_id', 'buffer_r', 'geometry'])
-buffer_gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
+time_buffer = time.time()
 
 # Create a dictionary of the districts
 buffer_dict = dict(zip(masterdf['pc11_d_id'], masterdf['need_buffer']))
 
 # TEST LOOP THROUGH DICTIONARY
-buffer_dict = {'581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
-
-# NOTE: Loop below works to run a single iteration of the buffer function for each district
-# time_buffer = time.time()
-# for key, value in buffer_dict.items():
-#         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, 50, value)
-#         sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
-#         # Concatenate output for each district into a single dataframe
-#         buffer_gdf = pd.concat([sum_buffer_gdf, buffer_gdf])
-
-# buffer_gdf
-# timestamp(time_buffer)
+buffer_dict = {'577': 'subtract', '581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
 
 
-# Create for loop to iterate through buffer process
-# NOTE: CURRENT ERROR IN WHILE LOOPS. NOT SUCCEEDING IN HAVING THE CONDITION UPDATE AND CEASE ACCORDINGLY. 
-time_buffer = time.time()
-# 1. Create empty dataframe to store results for each district
-df = pd.DataFrame(columns=['raster_value', 'pc11_d_id', 'buffer_r', 'geometry'])
-df['buffer_r'] = df['buffer_r'].astype(int)
-buffer_gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
+
+# Initialize a list to store individual GeoDataFrames
+buffer_gdf_list = []
+
 # 2. Run for loop (loop through each district)
 for key, value in buffer_dict.items():
         buffer_radius = 100
+        iteration_count = 0
+        
         # Run initial buffer function 
         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
+        print('1st Run: District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
         # 3. Run while loop (iterate over a single district until threshold is met)
-        while abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5:
-                # TODO: need to change 'value' as input here; the actual input of interest 'revised_buffer'
-                # How should I structure to use 'need_buffer' as first input, and 'revised_buffer' as iterative input?
-                if value in ['enlarge', 'subtract']:
-                        buffer_radius = buffer_radius * 2                               # increase the size of buffer for next iteration
-                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
-                        # print('District ' + key + 'buffer radius: ' + str(buffer_radius) + 'm ' + sum_buffer_gdf['need_buffer'].item())
-                        # buffer_dict[key]=sum_buffer_gdf['revised_buffer'].item()        # update the value in dictionary for next iteration
-                        value = sum_buffer_gdf['revised_buffer'].item()                 # Redefine 'value' to take the revised buffer status
-                elif value == 'overenlarged': 
-                        buffer_radius = buffer_radius / 4                               # reduce the size of buffer for next iteration
-                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
-                        # print('buffer radius: ' + str(buffer_radius) + ' ' + sum_buffer_gdf['need_buffer'].item())
-                        value = sum_buffer_gdf['revised_buffer'].item()         # update the value in dictionary for next iteration
-                elif value == 'oversubtracted':
-                        buffer_radius = buffer_radius / 4                               # reduce the size of buffer for next iteration
-                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
-                        # print('buffer radius: ' + str(buffer_radius) + ' ' + sum_buffer_gdf['need_buffer'].item())
-                        value = sum_buffer_gdf['revised_buffer'].item()        # update the value in dictionary for next iteration
-                # else:
-                #         # break
-                #         # Make sure dataframes have the same crs
-                #         sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
-                        # print('District ' + key + ' buffer iteration complete.')
-        # Concatenate output for each district into a single dataframe
-        sum_buffer_gdf.to_crs(crs=buffer_gdf.crs, inplace=True)
-        buffer_gdf = pd.concat([sum_buffer_gdf, buffer_gdf])
-        # Remove duplicates (added in iteration process)
-        buffer_gdf.drop_duplicates(subset='pc11_d_id', inplace=True)
-buffer_gdf
+        if value != 'unchanged':
+                while abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5:
+                        while iteration_count <= 5:
+                                if sum_buffer_gdf['revised_buffer'].item() in ['enlarge', 'subtract']:
+                                        # buffer_radius = buffer_radius * 2       # increase the size of buffer for next iteration
+                                        buffer_radius = buffer_radius + (buffer_radius/2)
+                                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
+                                        print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
+                                        iteration_count = iteration_count + 1
+                                elif sum_buffer_gdf['revised_buffer'].item() == 'overenlarged': 
+                                        # buffer_radius = buffer_radius - 50                               # reduce the size of buffer for next iteration
+                                        buffer_radius = buffer_radius - (buffer_radius/2)
+                                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
+                                        print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
+                                        iteration_count = iteration_count + 1
+                                elif sum_buffer_gdf['revised_buffer'].item() == 'oversubtracted': 
+                                        # buffer_radius = buffer_radius - 50                               # reduce the size of buffer for next iteration
+                                        buffer_radius = buffer_radius - (buffer_radius/2)
+                                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
+                                        print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
+                                        iteration_count = iteration_count + 1
+        # Append the single-row GeoDataFrame to the list
+        buffer_gdf_list.append(sum_buffer_gdf)
+        print('*** District ' + key + ' complete. ***\n')
+
 timestamp(time_buffer)
 
-
+# Concatenate all GeoDataFrames in the list
+buffer_gdf = pd.concat(buffer_gdf_list)
+# Drop duplicates based on 'pc11_d_id'
+buffer_gdf.drop_duplicates(subset='pc11_d_id', inplace=True)
+# Reset index
+buffer_gdf.reset_index(drop=True, inplace=True)
+# Display the final GeoDataFrame
+print(buffer_gdf)
 
 
 # Export buffer_gdf to .feather

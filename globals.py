@@ -99,6 +99,13 @@ def buffer_logic(row, need_buffer, revised_diff):
             return 'subtract'
          else:
             return 'unchanged'
+    elif row[need_buffer] == 'unchanged':
+        if row[revised_diff] > 5:           
+            return 'enlarge'
+        if row[revised_diff] < -5:
+            return 'subtract'
+        else:
+            return 'unchanged'
     else:
         return 'unchanged'                  #   5. To complete the buffer iteration process (5% threshold reached)
     
