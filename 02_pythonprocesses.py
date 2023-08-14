@@ -268,6 +268,11 @@ if ADPcn == 'ADPc3':
 elif ADPcn == 'ADPc5':
         masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc5'), axis=1)
 
+
+# Identify districts where the ADPc5 > worldpop_rural (more agricultural population than total rural population). 
+if masterdf['ADP5'] > masterdf['worldpop_rural']:
+        masterdf['need_buffer']=='ineligible'
+
 # Export masterdf to csv
 masterdf.to_csv(masterdf_path, index=False)
 
@@ -307,7 +312,7 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         elif buffer_type == 'unchanged':
                 degrees = 0                                     # No buffer required (type == 'unchanged')
         else: 
-                degrees = 0   
+                degrees = 0                                     # No buffer required (type == 'ineligible')
 
         print('Creating ' + str(buffer_radius) + 'm buffers on crop lands for district: ' + district_code)  
 
@@ -365,7 +370,7 @@ time_buffer = time.time()
 buffer_dict = dict(zip(masterdf['pc11_d_id'], masterdf['need_buffer']))
 
 # TEST LOOP THROUGH DICTIONARY
-# buffer_dict = {'577': 'subtract', '581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
+# buffer_dict = {'572': 'subtract', '581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
 
 
 
@@ -382,11 +387,10 @@ for key, value in buffer_dict.items():
         print('1st Run: District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
         print('d_bufferedpc: ' + str(round(sum_buffer_gdf['d_bufferedpc'].item(),2)))
         # 3. Run while loop (iterate over a single district until threshold is met)
-        while abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5:
-                # while iteration_count <= 5:
-                if value == 'unchanged':                # Ensures districts that are initially within threshold do not run through 
-                                                        #  the buffer iteration process
-                        break
+        #       Iteration count is designed to present unseen errors from looping forever; buffer process will cut off after 5 runs
+        while (abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5) and (iteration_count <= 5):
+                if value in ['unchanged', 'ineligible']:        # Ensures districts that are initially within threshold or are ineligible 
+                        break                                   #  do not run through the buffer iteration process
                 elif sum_buffer_gdf['revised_buffer'].item() in ['enlarge', 'subtract']:
                         buffer_radius = round(buffer_radius + (buffer_radius/2))
                         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
@@ -396,7 +400,7 @@ for key, value in buffer_dict.items():
                 elif sum_buffer_gdf['revised_buffer'].item() == 'oversubtracted': 
                         buffer_radius = round(buffer_radius - (buffer_radius/2))
                         sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
-                        
+                
                 print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
                 print('d_bufferedpc: ' + str(round(sum_buffer_gdf['d_bufferedpc'].item(),2)))
                 iteration_count = iteration_count + 1
@@ -425,7 +429,7 @@ buffer_df = pd.DataFrame(buffer_gdf.drop(columns = 'geometry'))
 buffer_df.to_csv(bufferdf_path, index=False)
 
 
-# ==================================================================================================================
+# =================================================================================================================
 # 7. PLOT FIGURES
 
 # NOTE: SNS plot syntax does not require long data; therefore can remove this section (2023-08-02)
@@ -445,28 +449,28 @@ buffer_df.to_csv(bufferdf_path, index=False)
 # # Append into a single dataframe
 # statsdf['d_pc'] = statsdf_pc['d_pc']
 
-# masterdf_bplot = masterdf[['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5']]
-masterdf_bplot_pc = masterdf[['d_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5']]
+# # masterdf_bplot = masterdf[['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5']]
+# masterdf_bplot_pc = masterdf[['d_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5']]
 
-# ==================================
-# Plot figures: BOXPLOT
-# Apply the default theme
-fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-# create chart in each subplot
-sns.boxplot(data=masterdf_bplot_pc
-            , orient = 'h'
-            , ax=axes[0]
-            , palette = 'Blues'
-            ).set(title="Difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
-sns.boxplot(data=masterdf_bplot_pc
-            , orient = 'h'
-            , ax=axes[1]
-            , palette = 'Blues'
-            ).set(title="Percentage difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
-# save figure to output folder
-plt.savefig(bplot_adp, dpi=600, facecolor="white", bbox_inches="tight")
-# display figure
-plt.show()
+# # ==================================
+# # Plot figures: BOXPLOT
+# # Apply the default theme
+# fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+# # create chart in each subplot
+# sns.boxplot(data=masterdf_bplot_pc
+#             , orient = 'h'
+#             , ax=axes[0]
+#             , palette = 'Blues'
+#             ).set(title="Difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
+# sns.boxplot(data=masterdf_bplot_pc
+#             , orient = 'h'
+#             , ax=axes[1]
+#             , palette = 'Blues'
+#             ).set(title="Percentage difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
+# # save figure to output folder
+# plt.savefig(bplot_adp, dpi=600, facecolor="white", bbox_inches="tight")
+# # display figure
+# plt.show()
 
 
 # ==================================

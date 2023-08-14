@@ -26,7 +26,6 @@ repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp'
 scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-# state_name = 'Karnataka'
 state_code = '29'             # code taken from Census India
 
 # NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
@@ -46,8 +45,8 @@ worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation,
 sfmt = '.feather'    # geofeather
 
 # 7. Set whether to use Total, Rural or Urban counts from census population tables
-tru_cat = 'Total'                   # Preference for using TOTAL count, due to disjunction between census and DW classifications of 'rural'
-# tru_cat = 'Rural'
+# tru_cat = 'Total'                   # Preference for using TOTAL count, due to disjunction between census and DW classifications of 'rural'
+tru_cat = 'Rural'
 # tru_cat = 'Urban'
 
 # 8. Set ADP definition for further analysis 
@@ -159,7 +158,7 @@ ghsl_poly_dissolved =       os.path.join(outputfolder, 'intermediates', 'ghsl', 
 state_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', f'state_{state_code}.shp')         
 districts_filepath = os.path.join(outputfolder, 'intermediates', 'boundaries_district', f'districts_{state_code}.shp')
 
-agworkers_filepath =        os.path.join(outputfolder, 'intermediates', 'census', 'agworkers.csv')
+agworkers_filepath =        os.path.join(outputfolder, 'intermediates', 'census', f'agworkers_{state_code}_{tru_cat}.csv')
 # agworkers_jn_filepath =     os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn.shp')
 # agworkers_jn_filepath_t =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_t.shp')
 # agworkers_jn_filepath_r =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_r.shp')

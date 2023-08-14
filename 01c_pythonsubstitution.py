@@ -146,13 +146,6 @@ if not os.path.isfile(ghsl_clipped):
 print('GHSL raster clipped to state boundaries and exported as .tif.\n')
 timestamp(time_23s)
 
-
-# ===========
-# 2.4 Calculate urban extent by district using GHSL raster
-
-
-
-
 # ===========
 # 2.5 Vectorise the GHSL raster layer
 

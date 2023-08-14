@@ -17,7 +17,7 @@ import pandas as pd
 import xlrd
 import openpyxl
 
-os.environ['USE_PYGEOS'] = '0'
+os.environ['USE_PYGEOS'] = '0'    # Disable pygeos (retired; geopandas integrates shapely)
 import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt
