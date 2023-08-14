@@ -148,7 +148,13 @@ timestamp(time_23s)
 
 
 # ===========
-# 2.4 Vectorise the GHSL raster layer
+# 2.4 Calculate urban extent by district using GHSL raster
+
+
+
+
+# ===========
+# 2.5 Vectorise the GHSL raster layer
 
 if not os.path.isfile(ghsl_poly_dissolved):
     time_24s = time.time()
