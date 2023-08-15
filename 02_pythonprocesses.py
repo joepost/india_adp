@@ -2,7 +2,7 @@
 
 # DISSERTATION
 # SECTION 02: Python processing
-#   This file picks up at the end of 01B, and uses the output from the first set of QGIS process.
+#   This script picks up at the end of 01B, and uses the output from the first set of QGIS process.
 #   This script is intended to be run in full as a single python file. 
 
 # Author: J Post
@@ -429,72 +429,6 @@ buffer_df = pd.DataFrame(buffer_gdf.drop(columns = 'geometry'))
 buffer_df.to_csv(bufferdf_path, index=False)
 
 
-# =================================================================================================================
-# 7. PLOT FIGURES
-
-# NOTE: SNS plot syntax does not require long data; therefore can remove this section (2023-08-02)
-# # pivot master df into a long format, for stats and plotting by ADP group
-# statsdf = masterdf[['pc11_d_id', 'd_name'
-#                     , 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5'
-#                     # , 'd_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5'
-#                     ]]
-# statsdf = pd.wide_to_long(statsdf, stubnames='d_adp', i=['pc11_d_id', 'd_name'], j='ADP')
-
-# statsdf_pc = masterdf[['pc11_d_id', 'd_name'
-#                     # , 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5'
-#                     , 'd_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5'
-#                     ]]
-# statsdf_pc = pd.wide_to_long(statsdf_pc, stubnames='d_pc', i=['pc11_d_id', 'd_name'], j='ADP')
-
-# # Append into a single dataframe
-# statsdf['d_pc'] = statsdf_pc['d_pc']
-
-# # masterdf_bplot = masterdf[['d_poptotals', 'd_adp1', 'd_adp2', 'd_adp3', 'd_adp4', 'd_adp5']]
-# masterdf_bplot_pc = masterdf[['d_pc1', 'd_pc2', 'd_pc3', 'd_pc4', 'd_pc5']]
-
-# # ==================================
-# # Plot figures: BOXPLOT
-# # Apply the default theme
-# fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-# # create chart in each subplot
-# sns.boxplot(data=masterdf_bplot_pc
-#             , orient = 'h'
-#             , ax=axes[0]
-#             , palette = 'Blues'
-#             ).set(title="Difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
-# sns.boxplot(data=masterdf_bplot_pc
-#             , orient = 'h'
-#             , ax=axes[1]
-#             , palette = 'Blues'
-#             ).set(title="Percentage difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
-# # save figure to output folder
-# plt.savefig(bplot_adp, dpi=600, facecolor="white", bbox_inches="tight")
-# # display figure
-# plt.show()
-
-
-# ==================================
-# Plot figures: DISTRIBUTION PLOT
-# Trial Kernel density estimates of ADP results? 
-
-# Plot standalone figures
-# fig, ax = plt.subplots(figsize=(12, 8))
-# ax = sns.catplot(data=masterdf_bplot_pc, kind="swarm")
-# plt.show()
-
-# sns.set_theme(style="white", palette="Greens", font="arial")
-
-# ax = sns.catplot(data=masterdf_bplot_pc
-#             , orient = 'h'
-#             , kind="box")
-#         #     , ax=axes[1]
-#         #     ).set(title="Percentage difference in census and disaggregated ADP estimate, by ADP definition", xlabel = "", ylabel="")
-# # sns.despine()
-# plt.show()
-
-
-
-# ==================================================================================================================
 
 
 print('\nScript complete.\n')
