@@ -195,8 +195,6 @@ ag_workers = ag_workers.merge(census_pop_cln, how='left', on='District code')
 
 
 
-
-
 # ==================================================================================================================
 # 3. CALCULATE ADP
 

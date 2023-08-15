@@ -56,9 +56,13 @@ ag_workers = pd.read_csv(agworkers_filepath
                          , dtype = {'State code':str, 'District code':str}
                          ) 
 
-masterdf = pd.read_csv(masterdf_path)
+masterdf = pd.read_csv(masterdf_path
+                         , dtype = {'pc11_s_id':str, 'pc11_d_id':str}
+                         )
 
-buffer_df = pd.read_csv(bufferdf_path)
+buffer_df = pd.read_csv(bufferdf_path
+                         , dtype = {'pc11_s_id':str, 'pc11_d_id':str}
+                         )
 buffer_gdf = gpd.read_feather(buffergdf_path)
 
 print('Input data files loaded.\n')
@@ -147,28 +151,33 @@ plt.show()
 
 # Prepare the dataset
 dot_df = masterdf[['d_name','Population', 'Population per sq km'
-            , 'ADPa_pctotal', 'ADPc5_pctotal', 'd_pc5']]
+            , 'ADPa_pctotal', 'ADPc5_pctotal', 'd_pc5'
+            # , 'd_pc0'
+            ]]
 
 # Make the PairGrid
+f, ax = plt.subplots(figsize=(14, 12))
 sns.set_theme(style="whitegrid")
-g = sns.PairGrid(dot_df.sort_values("d_pc5", ascending=False)
-                 , x_vars=dot_df.columns[3:], y_vars=["d_name"],
+g = sns.PairGrid(dot_df.sort_values("ADPa_pctotal", ascending=False), x_vars=dot_df.columns[3:], y_vars=["d_name"],
                  height=10, aspect=.25)
 
 # Draw a dot plot using the stripplot function
-g.map(sns.stripplot, size=10, orient="h", jitter=False,
-      palette="flare_r", linewidth=1, edgecolor="w")
+g.map(sns.stripplot, size=10, orient="h", jitter=False, palette="flare_r", linewidth=1, edgecolor="w")
 
 # Use the same x axis limits on all columns and add better labels
-g.set(xlim=(-95, 95), ylabel="", xlabel="Per cent")
+g.set(xlim=(-25, 105), ylabel="", xlabel="Per cent")
 
 # Use semantically meaningful titles for the columns
-titles = ['$ADP_{A}$ as % Total Pop', '$ADP_{C5}$ as % Total Pop', '% difference']
+titles = ['$ADP_{A}$ as % Total Pop', '$ADP_{C5}$ as % Total Pop', '% difference'
+          # , 'base difference'
+          ]
 
 for ax, title in zip(g.axes.flat, titles):
 
     # Set a different title for each axes
     ax.set(title=title)
+
+    ax.axvline(x=0, c="red", dashes=(5, 2))
 
     # Make the grid horizontal instead of vertical
     ax.xaxis.grid(False)
@@ -177,9 +186,26 @@ for ax, title in zip(g.axes.flat, titles):
 sns.despine(left=True, bottom=True)
 
 # Add a main title to the PairGrid
-plt.subplots_adjust(top=0.9)  # Adjust top margin for the title
-g.fig.suptitle("Population characteristics by District, Karnataka", fontsize=16)
+plt.subplots_adjust(top=0.88)  # Adjust top margin for the title
+g.fig.suptitle("Agricultural Dependent Population estimates by district"
+                , x=0.05, y=0.98, ha="left"
+                , fontsize=16
+                , fontweight='bold'
+               )
 
-plt.show()
+
+# Add a subtitle below the main title
+subtitle_text = "Karnataka, India"
+plt.figtext(0.05, 0.935, subtitle_text, ha="left", fontsize=12)
+
+# Add footnote
+footnote = "$ADP_{A}$: aggregated Agricultural Dependent Population\n$ADP_{C5}$: census Agricultural Dependent Population"
+plt.figtext(0.05, -0.02, footnote, ha="left", fontsize=8)
+
+
+# save figure to output folder
+plt.savefig(pointplot_adp, dpi=600, facecolor="white", bbox_inches="tight")
+
+# plt.show()
 
 # ==================================================================================================================

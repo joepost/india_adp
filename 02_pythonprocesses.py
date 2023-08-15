@@ -252,6 +252,10 @@ masterdf['d_pc4'] = masterdf['ADPc4_pctotal'] - masterdf['ADPa_pctotal']
 masterdf['ADPc5_pctotal'] = masterdf['ADP5']/masterdf['Population']*100
 masterdf['d_pc5'] = masterdf['ADPc5_pctotal'] - masterdf['ADPa_pctotal']
 
+# Calculate difference between ADPc5 and Rural population
+#       If negative, then the estimated ADP surpasses entire rural population of district
+masterdf['d_rural_adp'] = masterdf['worldpop_rural'] - masterdf['ADP5']
+
 dlist = ['d_poptotals', 'd_pc1', 'd_pc2', 'd_pc3','d_pc4', 'd_pc5']
 
 masterdf.drop(columns='geometry', inplace=True)
@@ -270,8 +274,9 @@ elif ADPcn == 'ADPc5':
 
 
 # Identify districts where the ADPc5 > worldpop_rural (more agricultural population than total rural population). 
-if masterdf['ADP5'] > masterdf['worldpop_rural']:
-        masterdf['need_buffer']=='ineligible'
+for i in masterdf['d_rural_adp']:
+        if i < 0:
+                masterdf['need_buffer']=='ineligible'
 
 # Export masterdf to csv
 masterdf.to_csv(masterdf_path, index=False)
@@ -429,7 +434,11 @@ buffer_df = pd.DataFrame(buffer_gdf.drop(columns = 'geometry'))
 buffer_df.to_csv(bufferdf_path, index=False)
 
 
+# Join buffer radius values to district polygons
+buffer_map = districts_shp.merge(buffer_df, on='pc11_d_id')
 
+# Export buffer map to .shp (for QGIS mapping)
+buffer_map.to_file(buffermap_path)
 
 print('\nScript complete.\n')
 timestamp(start_time)
