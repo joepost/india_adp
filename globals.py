@@ -26,7 +26,7 @@ repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp'
 scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-state_code = '29'             # code taken from Census India
+state_code = '08'             # code taken from Census India
 
 # NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
 #       Maybe not a priority in the time remaining; won't have any effect on final submission 
@@ -45,8 +45,8 @@ worldpop_model = 'Aggregated_UNadj'     # Population count, Top-down estimation,
 sfmt = '.feather'    # geofeather
 
 # 7. Set whether to use Total, Rural or Urban counts from census population tables
-# tru_cat = 'Total'                   # Preference for using TOTAL count, due to disjunction between census and DW classifications of 'rural'
-tru_cat = 'Rural'
+tru_cat = 'Total'                   # Preference for using TOTAL count, due to disjunction between census and DW classifications of 'rural'
+# tru_cat = 'Rural'
 # tru_cat = 'Urban'
 
 # 8. Set ADP definition for further analysis 
@@ -183,7 +183,13 @@ sum_crpop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpo
 # Output files
 # These file paths store the final output files used in the Results section
 masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}_{ADPcn}.csv')
-buffergdf_path =      os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}{sfmt}')
+ineligibledf_path =  os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_{state_code}_{tru_cat}_{ADPcn}.csv')
+
+buffergdf_path =     os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}{sfmt}')
 bufferdf_path =      os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.csv')
+buffermap_path =     os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.shp')
+
+# Figures
 bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')
+pointplot_adp = os.path.join(outputfolder, 'final', 'figures', f'pointplot_adp_{state_code}_{tru_cat}.png')
 

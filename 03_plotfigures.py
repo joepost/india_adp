@@ -65,6 +65,17 @@ buffer_df = pd.read_csv(bufferdf_path
                          )
 buffer_gdf = gpd.read_feather(buffergdf_path)
 
+
+# Merged buffer files 
+# Use glob to create list of all completed buffers
+bufferdf_to_merge = glob.glob(os.path.join(outputfolder, 'final', 'tables', f'bufferdf_*_{tru_cat}_{ADPcn}.csv')) 
+
+# Use loop to read the files into an empty list
+buffer_allstates_list = []
+for file in bufferdf_to_merge:
+    statefile = pd.read_csv(file, dtype = {'pc11_s_id':str, 'pc11_d_id':str})
+    buffer_allstates_list.append(statefile)
+
 print('Input data files loaded.\n')
 timestamp(time_11s)
 
@@ -124,7 +135,7 @@ sns.violinplot(data=box_df
                , palette="viridis"
               #  , color="skyblue"
                , inner="point"
-               , orient="h").set(title="Performance of aggregated ADP estimate against census results, \nby district, Karnataka"
+               , orient="h").set(title=f"Performance of aggregated ADP estimate against census results, \nby district, {state_name}"
                , xlabel = "Percentage difference"
                , ylabel="")
 
@@ -200,7 +211,7 @@ plt.figtext(0.05, 0.935, subtitle_text, ha="left", fontsize=12)
 
 # Add footnote
 footnote = "$ADP_{A}$: aggregated Agricultural Dependent Population\n$ADP_{C5}$: census Agricultural Dependent Population"
-plt.figtext(0.05, -0.02, footnote, ha="left", fontsize=8)
+plt.figtext(0.05, -0.02, footnote, ha="left", fontsize=10)
 
 
 # save figure to output folder

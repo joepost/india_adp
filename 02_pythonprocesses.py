@@ -15,6 +15,7 @@ import glob
 import subprocess
 import sys
 import json 
+import math
 import time
 import pandas as pd
 
@@ -274,16 +275,21 @@ elif ADPcn == 'ADPc5':
 
 
 # Identify districts where the ADPc5 > worldpop_rural (more agricultural population than total rural population). 
-for i in masterdf['d_rural_adp']:
-        if i < 0:
-                masterdf['need_buffer']=='ineligible'
+#       or districts with no rural population (worldpop_rural = NaN)
+masterdf["d_rural_adp"] = masterdf["d_rural_adp"].fillna(-999)
+mask = (masterdf['d_rural_adp'] < 0)
+masterdf['need_buffer'][mask] = 'ineligible'
+
+# Remove ineligible districts and save in separate csv
+ineligibledf = masterdf[masterdf['need_buffer'] == 'ineligible']
+ineg_list = ineligibledf.index.values.tolist()
+masterdf = masterdf.drop(index=ineg_list)
 
 # Export masterdf to csv
 masterdf.to_csv(masterdf_path, index=False)
+ineligibledf.to_csv(ineligibledf_path, index=False)
 
 print('Master results file exported to csv.\n')
-
-
 
 # ==================================================================================================================
 # 6. BUFFER ITERATION
@@ -316,8 +322,6 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
                 degrees = buffer_radius * (0.00001/1.11)       
         elif buffer_type == 'unchanged':
                 degrees = 0                                     # No buffer required (type == 'unchanged')
-        else: 
-                degrees = 0                                     # No buffer required (type == 'ineligible')
 
         print('Creating ' + str(buffer_radius) + 'm buffers on crop lands for district: ' + district_code)  
 
@@ -442,3 +446,5 @@ buffer_map.to_file(buffermap_path)
 
 print('\nScript complete.\n')
 timestamp(start_time)
+
+
