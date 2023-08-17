@@ -66,6 +66,12 @@ buffer_df = pd.read_csv(bufferdf_path
 buffer_gdf = gpd.read_feather(buffergdf_path)
 
 
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+# NOTE: CAUTION !!!!!!
+#   The code below assumes that all buffer_gdf files have the same column stucture. 
+#   All files created BEFORE 17-08-2023 14:00 have the OLD file structure. 
+#   These files should be recalculated or manually removed from the merge list prior to concatenation. 
+
 # Merged buffer files 
 # Use glob to create list of all completed buffers
 bufferdf_to_merge = glob.glob(os.path.join(outputfolder, 'final', 'tables', f'bufferdf_*_{tru_cat}_{ADPcn}.csv')) 
@@ -81,6 +87,7 @@ buffer_combined = pd.concat(buffer_allstates_list)
 
 # Export combined buffer df to csv
 buffer_combined.to_csv(buffercombined_path, index=False)
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 print('Input data files loaded.\n')
 timestamp(time_11s)

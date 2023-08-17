@@ -327,7 +327,7 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
 
         # Convert buffer metre input into degrees (WGS84)
         if buffer_type == 'enlarge':
-                degrees = buffer_radius * (0.00001/1.11)
+                degrees = buffer_radius * (0.00001/1.11)        # Transformation required if CRS is geographic (WGS84, EPSG:4326)
         elif buffer_type == 'subtract':
                 buffer_radius = buffer_radius * -1              # negative buffer radius = reduction in size
                 degrees = buffer_radius * (0.00001/1.11)       
