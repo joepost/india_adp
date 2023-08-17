@@ -309,27 +309,45 @@ timestamp(time_worldpop)
 
 
 # ==================================================================================================================
-# EXTRA. ZONAL STATISTICS
-    
-# NOTE: as of 2023-08-02, not certain whether to use the below functions. Remove if not actioned. 
+# EXTRA. CALCULATE CROPLAND AND RURAL AREA BY DISTRICT
 
-# # Use zonal statistics
-# zs = zonal_stats(districts_filepath     # 1st argument: shapefile of polygons
-#                  , pop_tif_clipped         # 2nd argument: raster of pixels
-#                  , band = 1
-#                  , stats = ["sum"]
-#                  , all_touched = False      # Specifies inclusion criteria; any pixel that touches the polygon is counted 
-#                  , geojson_out = True
-#                  , prefix = 'pop_'
-#                  )
+# Input files:
+#   1. vector (feather) of cropland area, for state
+#   2. vector (feather) of rural area, for state
+#   3. district boundaries, for state (already read in above)
 
-# geojson_string = json.dumps({"type": "FeatureCollection", "features": zs})
-# gdf = gpd.read_file(geojson_string)
+cropland_poly = gpd.read_feather(cropland_poly_dissolved)
+rural_poly =    gpd.read_feather(ghsl_poly_dissolved)
 
-# # gdf.plot()
-# # plt.show()
+# Set to projected crs (for area/distance calculations)
+# Selection: EPSG:24378 (Kalinapur 1975 / India Zone I)
+# NOTE: Decision to comment out the below transformation to save processing time
+#       Compared the difference between results in terms of % of total area; difference is minuscule and does not affect interpretation. 
+# cropland_poly.to_crs(crs = 'EPSG:24378', inplace=True)
+# rural_poly.to_crs(crs = cropland_poly.crs, inplace=True)
+# districts_shp.to_crs(crs = cropland_poly.crs, inplace=True)
 
-# gdf.head()
+# Calculate district area
+districts_shp['district_area'] = districts_shp['geometry'].area
+
+# Intersect cropland with district boundaries
+cropland_by_district = gpd.overlay(districts_shp, cropland_poly, how="intersection")
+
+# Calculate the area of cropland within each district
+cropland_by_district['cropland_area'] = cropland_by_district['geometry'].area
+cropland_by_district['crop_area_pc'] = cropland_by_district['cropland_area'] / cropland_by_district['district_area'] * 100
+
+#Repeat for rural area
+rural_by_district = districts_shp.overlay(rural_poly, how="intersection")
+rural_by_district['rural_area'] = rural_by_district['geometry'].area
+rural_by_district['rural_area_pc'] = rural_by_district['rural_area'] / rural_by_district['district_area'] * 100
+
+# Export files
+df_cropland_area = pd.DataFrame(cropland_by_district.drop(columns = ['geometry', 'd_name', 'pc11_s_id']))
+df_cropland_area.to_csv(cropland_area_path, index=False)
+
+df_rural_area = pd.DataFrame(rural_by_district.drop(columns = ['geometry', 'd_name', 'pc11_s_id']))
+df_rural_area.to_csv(rural_area_path, index=False)
 
 
 

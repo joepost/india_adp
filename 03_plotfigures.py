@@ -76,6 +76,12 @@ for file in bufferdf_to_merge:
     statefile = pd.read_csv(file, dtype = {'pc11_s_id':str, 'pc11_d_id':str})
     buffer_allstates_list.append(statefile)
 
+# Concatenate all GeoDataFrames in the list
+buffer_combined = pd.concat(buffer_allstates_list)
+
+# Export combined buffer df to csv
+buffer_combined.to_csv(buffercombined_path, index=False)
+
 print('Input data files loaded.\n')
 timestamp(time_11s)
 

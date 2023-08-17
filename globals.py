@@ -26,7 +26,7 @@ repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp'
 scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-state_code = '08'             # code taken from Census India
+state_code = '10'             # code taken from Census India
 
 # NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
 #       Maybe not a priority in the time remaining; won't have any effect on final submission 
@@ -52,6 +52,9 @@ tru_cat = 'Total'                   # Preference for using TOTAL count, due to d
 # 8. Set ADP definition for further analysis 
 # ADPcn = 'ADPc3'
 ADPcn = 'ADPc5'
+
+# 9. Set maximum number of iterations for buffer process
+iteration_max = 5
 # ********************************************
 
 
@@ -136,9 +139,9 @@ locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_Loca
 # NOTE: CURRENT TRIAL = 100m CROPLAND; 1km POPULATION. NOT COMPUTATIONALLY FEASIBLE TO USE 100m POP POINTS DATA. 
 pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_1km_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
 cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_{state_code}_cropland_{scale}.tif') # DynamicWorld extracted from GEE
-agworkers_main =         os.path.join(datafolder, 'census', f'DDW-B04-{state_code}00.xls')              # Census B-04 = Main workers tables
-agworkers_marginal =     os.path.join(datafolder, 'census', f'DDW-B06-{state_code}00.xls')              # Census B-06 = Marginal workers tables
-census_population =      os.path.join(datafolder, 'census', 'CensusIndia2011_A-1_NO_OF_VILLAGES_TOWNS_HOUSEHOLDS_POPULATION_AND_AREA.xlsx')   # Census A-01 = district populations
+agworkers_main =        os.path.join(datafolder, 'census', f'DDW-B04-{state_code}00.xls')              # Census B-04 = Main workers tables
+agworkers_marginal =    os.path.join(datafolder, 'census', f'DDW-B06-{state_code}00.xls')              # Census B-06 = Marginal workers tables
+census_population =     os.path.join(datafolder, 'census', 'CensusIndia2011_A-1_NO_OF_VILLAGES_TOWNS_HOUSEHOLDS_POPULATION_AND_AREA.xlsx')   # Census A-01 = district populations
 
 
 # GHSL component files
@@ -153,23 +156,16 @@ ghsl_to_merge = glob.glob(os.path.join(ghslfolder, '*.tif'))
 ghsl_merged =           os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india.tif')
 ghsl_merged_wgs84 =     os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_wgs84.tif')         # CRS reprojected to WGS84
 ghsl_clipped =          os.path.join(outputfolder, 'intermediates', 'ghsl', f'ghsl_{state_code}_clipped.tif')
-ghsl_poly_dissolved =       os.path.join(outputfolder, 'intermediates', 'ghsl', f'ghsl_{state_code}_vector_dissolved{sfmt}')
+ghsl_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'ghsl', f'ghsl_{state_code}_vector_dissolved{sfmt}')
+rural_area_path =       os.path.join(outputfolder, 'intermediates', 'ghsl', f'rural_{state_code}_area.csv')
 
 state_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', f'state_{state_code}.shp')         
 districts_filepath = os.path.join(outputfolder, 'intermediates', 'boundaries_district', f'districts_{state_code}.shp')
 
 agworkers_filepath =        os.path.join(outputfolder, 'intermediates', 'census', f'agworkers_{state_code}_{tru_cat}.csv')
-# agworkers_jn_filepath =     os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn.shp')
-# agworkers_jn_filepath_t =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_t.shp')
-# agworkers_jn_filepath_r =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_r.shp')
-# agworkers_jn_filepath_u =   os.path.join(outputfolder, 'intermediates', 'census', 'agworkers_jn_u.shp')
-
-# census_jn_filepath =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn.shp')
-# census_jn_filepath_t =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_t.shp')
-# census_jn_filepath_r =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_r.shp')
-# census_jn_filepath_u =        os.path.join(outputfolder, 'intermediates', 'census', 'census_jn_u.shp')
 
 cropland_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'dynamicworld', f'cropland_vector_{state_code}_dissolved{sfmt}')
+cropland_area_path =        os.path.join(outputfolder, 'intermediates', 'dynamicworld', f'cropland_{state_code}_area.csv')
 
 pop_tif_clipped =           os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_tif_{state_code}_clipped.tif')
 pop_points =                os.path.join(outputfolder, 'intermediates', 'worldpop', f'pop_points_{state_code}{sfmt}')
@@ -185,9 +181,10 @@ sum_crpop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpo
 masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}_{ADPcn}.csv')
 ineligibledf_path =  os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_{state_code}_{tru_cat}_{ADPcn}.csv')
 
-buffergdf_path =     os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}{sfmt}')
-bufferdf_path =      os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.csv')
-buffermap_path =     os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.shp')
+buffergdf_path =        os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}{sfmt}')
+bufferdf_path =         os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.csv')
+buffermap_path =        os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.shp')
+buffercombined_path =   os.path.join(outputfolder, 'final', 'tables', f'bufferdf_COMBINED_{tru_cat}_{ADPcn}.csv')
 
 # Figures
 bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')

@@ -192,6 +192,8 @@ timestamp(time_34s)
 #   3. WorldPop (all points) aggregated count by district
 #   4. WorldPop (rural points) aggregated count by district
 #   5. WorldPop (cropland points) aggregated count by district
+#   6. Cropland area by district
+#   7. Rural area by district
 
 masterdf = ag_workers_jn[['pc11_s_id', 'pc11_d_id', 'd_name', 'geometry', 'District code',
                                 'Population', 'Area sq km', 'Population per sq km', 
@@ -209,6 +211,13 @@ join_worldpop_crop = sum_crpop_districts[['pc11_d_id', 'raster_value']]
 join_worldpop_crop = join_worldpop_crop.rename(columns={'raster_value':'worldpop_crop'})
 masterdf = masterdf.merge(join_worldpop_crop, how='left', on=['pc11_d_id'])
 
+df_cropland_area = pd.read_csv(cropland_area_path, dtype = {'pc11_s_id':str, 'pc11_d_id':str})
+masterdf = masterdf.merge(df_cropland_area, how='left', on=['pc11_d_id'])
+
+df_rural_area = pd.read_csv(rural_area_path, dtype = {'pc11_s_id':str, 'pc11_d_id':str})
+masterdf = masterdf.merge(df_rural_area, how='left', on=['pc11_d_id'], suffixes=(None,'_y'))
+
+masterdf.drop(columns='district_area_y', inplace=True)
 
 # ==================================================================================================================
 # 5. CALCULATE DIFFERENCE IN POPULATION ESTIMATES
@@ -230,7 +239,10 @@ masterdf = masterdf.merge(join_worldpop_crop, how='left', on=['pc11_d_id'])
 masterdf['d_poptotals'] = masterdf['worldpop'] - masterdf['Population']
 masterdf['d_pc0'] = round(100 - masterdf['Population']/masterdf['worldpop']*100,2)
 
-# NEW: 2023-08-07
+# Calculate rural population as a % of total population
+masterdf['rural_pctotal'] = masterdf['worldpop_rural']/masterdf['worldpop']*100
+
+# Calculate ADPa as a % of total population
 masterdf['ADPa_pctotal'] = masterdf['worldpop_crop']/masterdf['Population']*100
 
 # Calculate difference between Worldpop cropland population and ADP1
@@ -266,8 +278,7 @@ masterdf.head()
 
 # Add column to flag districts that need a buffer
 # Use defined function with conditional rules: categorise_buffer
-
-# Next apply conditional rows to each row of masterdf
+# Apply conditional rows to each row of masterdf
 if ADPcn == 'ADPc3':
         masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc3'), axis=1)
 elif ADPcn == 'ADPc5':
@@ -350,7 +361,8 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         elif ADPcn == 'ADPc5':
                 ADPcn_pctotal = 'ADPc5_pctotal'
         
-        check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', ADPcn_pctotal, 'need_buffer']], how='left', on='pc11_d_id')
+        check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', 'crop_area_pc', 'rural_area_pc', ADPcn_pctotal, 'need_buffer']]
+                                               , how='left', on='pc11_d_id')
 
         check_buffer['buffered_pctotal'] = check_buffer['raster_value']/check_buffer['Population']*100
         check_buffer['d_bufferedpc'] = check_buffer[ADPcn_pctotal] - check_buffer['buffered_pctotal']
@@ -397,7 +409,7 @@ for key, value in buffer_dict.items():
         print('d_bufferedpc: ' + str(round(sum_buffer_gdf['d_bufferedpc'].item(),2)))
         # 3. Run while loop (iterate over a single district until threshold is met)
         #       Iteration count is designed to present unseen errors from looping forever; buffer process will cut off after 5 runs
-        while (abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5) and (iteration_count <= 5):
+        while (abs(sum_buffer_gdf['d_bufferedpc'].item()) > 5) and (iteration_count <= iteration_max):
                 if value in ['unchanged', 'ineligible']:        # Ensures districts that are initially within threshold or are ineligible 
                         break                                   #  do not run through the buffer iteration process
                 elif sum_buffer_gdf['revised_buffer'].item() in ['enlarge', 'subtract']:
@@ -422,8 +434,6 @@ timestamp(time_buffer)
 
 # Concatenate all GeoDataFrames in the list
 buffer_gdf = pd.concat(buffer_gdf_list)
-# Drop duplicates based on 'pc11_d_id'
-# buffer_gdf.drop_duplicates(subset='pc11_d_id', inplace=True)
 # Reset index
 buffer_gdf.reset_index(drop=True, inplace=True)
 # Display the final GeoDataFrame
