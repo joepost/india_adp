@@ -26,7 +26,7 @@ repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp'
 scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-state_code = '10'             # code taken from Census India
+state_code = '29'             # code taken from Census India
 
 # NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
 #       Maybe not a priority in the time remaining; won't have any effect on final submission 
@@ -54,7 +54,7 @@ tru_cat = 'Total'                   # Preference for using TOTAL count, due to d
 ADPcn = 'ADPc5'
 
 # 9. Set maximum number of iterations for buffer process
-iteration_max = 5
+iteration_max = 10
 # ********************************************
 
 
@@ -182,6 +182,7 @@ masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{s
 ineligibledf_path =  os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_{state_code}_{tru_cat}_{ADPcn}.csv')
 
 buffergdf_path =        os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}{sfmt}')
+buffer_poly_path =      os.path.join(outputfolder, 'final', 'spatial_files', f'buffer_polygon_{state_code}_{tru_cat}_{ADPcn}.shp')
 bufferdf_path =         os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.csv')
 buffermap_path =        os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.shp')
 buffercombined_path =   os.path.join(outputfolder, 'final', 'tables', f'bufferdf_COMBINED_{tru_cat}_{ADPcn}.csv')

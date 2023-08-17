@@ -340,6 +340,7 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         d_buffer = district_series.buffer(degrees)
         d_buffer.name = 'geometry'
         d_buffer_gdf = gpd.GeoDataFrame(d_buffer, crs="EPSG:4326", geometry='geometry')
+        d_buffer_gdf['pc11_d_id'] = district_code
 
         # Join rural points to buffer zone
         ru_points_buffer = rural_points.sjoin(d_buffer_gdf, how='inner', predicate='within')
@@ -371,7 +372,7 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
         check_buffer['revised_buffer'] = check_buffer.apply(lambda row: buffer_logic(row, 'need_buffer', 'd_bufferedpc'), axis=1)
 
         timestamp(time_buff)
-        return check_buffer
+        return check_buffer, d_buffer_gdf
 
 # # TEST RUN
 # sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '583', 50, 'subtract')
@@ -380,7 +381,7 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
 # sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', 0, 'enlarge')
 
 # # TEST INPUT 'UNCHANGED'
-# sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', 400, 'enlarge')
+# sum_buffer_gdf, buffer_poly = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', -50, 'enlarge')
 
 
 # =====================
@@ -397,6 +398,7 @@ buffer_dict = dict(zip(masterdf['pc11_d_id'], masterdf['need_buffer']))
 
 # Initialize a list to store individual GeoDataFrames
 buffer_gdf_list = []
+buffer_poly_list = []
 
 # 2. Run for loop (loop through each district)
 for key, value in buffer_dict.items():
@@ -404,7 +406,7 @@ for key, value in buffer_dict.items():
         iteration_count = 0
         
         # Run initial buffer function 
-        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
+        sum_buffer_gdf, buffer_poly = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
         print('1st Run: District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
         print('d_bufferedpc: ' + str(round(sum_buffer_gdf['d_bufferedpc'].item(),2)))
         # 3. Run while loop (iterate over a single district until threshold is met)
@@ -414,13 +416,13 @@ for key, value in buffer_dict.items():
                         break                                   #  do not run through the buffer iteration process
                 elif sum_buffer_gdf['revised_buffer'].item() in ['enlarge', 'subtract']:
                         buffer_radius = round(buffer_radius + (buffer_radius/2))
-                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
+                        sum_buffer_gdf, buffer_poly = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, value)
                 elif sum_buffer_gdf['revised_buffer'].item() == 'overenlarged': 
                         buffer_radius = round(buffer_radius - (buffer_radius/2))
-                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
+                        sum_buffer_gdf, buffer_poly = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'enlarge')
                 elif sum_buffer_gdf['revised_buffer'].item() == 'oversubtracted': 
                         buffer_radius = round(buffer_radius - (buffer_radius/2))
-                        sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
+                        sum_buffer_gdf, buffer_poly = generate_buffer(districts_shp, gdf_crops, pop_points_rural, key, buffer_radius, 'subtract')
                 
                 print('District ' + key + ' value is ' + value + ' and result: ' + sum_buffer_gdf['revised_buffer'].item())
                 print('d_bufferedpc: ' + str(round(sum_buffer_gdf['d_bufferedpc'].item(),2)))
@@ -428,14 +430,18 @@ for key, value in buffer_dict.items():
 
         # Append the single-row GeoDataFrame to the list
         buffer_gdf_list.append(sum_buffer_gdf)
+        buffer_poly_list.append(buffer_poly)
+
         print('*** District ' + key + ' complete. ***\n Iterations: ' + str(iteration_count) + '\n')
 
 timestamp(time_buffer)
 
 # Concatenate all GeoDataFrames in the list
 buffer_gdf = pd.concat(buffer_gdf_list)
+buffer_poly_state = pd.concat(buffer_poly_list)
 # Reset index
 buffer_gdf.reset_index(drop=True, inplace=True)
+buffer_poly_state.reset_index(drop=True, inplace=True)
 # Display the final GeoDataFrame
 print(buffer_gdf)
 
@@ -451,8 +457,9 @@ buffer_df.to_csv(bufferdf_path, index=False)
 # Join buffer radius values to district polygons
 buffer_map = districts_shp.merge(buffer_df, on='pc11_d_id')
 
-# Export buffer map to .shp (for QGIS mapping)
+# Export buffer map and buffer polygon to .shp (for QGIS mapping)
 buffer_map.to_file(buffermap_path)
+buffer_poly_state.to_file(buffer_poly_path)
 
 print('\nScript complete.\n')
 timestamp(start_time)
