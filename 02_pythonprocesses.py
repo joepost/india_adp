@@ -378,7 +378,7 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
 # sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '583', 50, 'subtract')
 
 # # TEST ZERO BUFFER
-# sum_buffer_gdf = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', 0, 'enlarge')
+# sum_buffer_gdf, buffer_poly = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '518', 50, 'unchanged')
 
 # # TEST INPUT 'UNCHANGED'
 # sum_buffer_gdf, buffer_poly = generate_buffer(districts_shp, gdf_crops, pop_points_rural, '582', -50, 'enlarge')
@@ -390,10 +390,11 @@ time_buffer = time.time()
 
 # Create a dictionary of the districts
 buffer_dict = dict(zip(masterdf['pc11_d_id'], masterdf['need_buffer']))
+if '518' in buffer_dict:                
+        del buffer_dict['518']          # Manually remove Mumbai; cropland unaligned with rural grid, causing buffer error. 
 
 # TEST LOOP THROUGH DICTIONARY
-# buffer_dict = {'572': 'subtract', '581': 'enlarge', '582': 'unchanged', '583': 'subtract', '584': 'enlarge'}
-
+# buffer_dict = {'518': 'unchanged', '520': 'enlarge', '521': 'enlarge'}
 
 
 # Initialize a list to store individual GeoDataFrames
