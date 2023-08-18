@@ -390,8 +390,9 @@ time_buffer = time.time()
 
 # Create a dictionary of the districts
 buffer_dict = dict(zip(masterdf['pc11_d_id'], masterdf['need_buffer']))
-if '518' in buffer_dict:                
-        del buffer_dict['518']          # Manually remove Mumbai; cropland unaligned with rural grid, causing buffer error. 
+for i in ['518', '244']:
+        if i in buffer_dict:                
+                del buffer_dict[i]          # Manually remove Mumbai; cropland unaligned with rural grid, causing buffer error. 
 
 # TEST LOOP THROUGH DICTIONARY
 # buffer_dict = {'518': 'unchanged', '520': 'enlarge', '521': 'enlarge'}

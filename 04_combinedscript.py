@@ -26,3 +26,5 @@ print("Combined script process complete.")
 timestamp(script04_start)
 
 
+buffer_poly_state.plot()
+plt.show()
