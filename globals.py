@@ -26,7 +26,7 @@ repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp'
 scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-state_code = '28'             # code taken from Census India
+state_code = '29'             # code taken from Census India
 
 # NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
 #       Maybe not a priority in the time remaining; won't have any effect on final submission 
@@ -186,6 +186,9 @@ buffer_poly_path =      os.path.join(outputfolder, 'final', 'spatial_files', f'b
 bufferdf_path =         os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.csv')
 buffermap_path =        os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.shp')
 buffercombined_path =   os.path.join(outputfolder, 'final', 'tables', f'bufferdf_COMBINED_{tru_cat}_{ADPcn}.csv')
+
+pop_tif_buffer_mask =   os.path.join(outputfolder, 'final', 'spatial_files', f'adptif_{state_code}_{tru_cat}_{ADPcn}.tif')
+pop_tif_final =         os.path.join(outputfolder, 'final', 'spatial_files', f'adpfinal_{state_code}_{tru_cat}_{ADPcn}.tif')
 
 # Figures
 bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')

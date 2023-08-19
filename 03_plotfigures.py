@@ -25,6 +25,14 @@ import seaborn as sns
 # from osgeo import gdal
 # from pygeos import Geometry
 
+import rasterio
+from rasterio.mask import mask
+from rasterio.features import geometry_mask
+from rasterio.plot import show
+from shapely.geometry import mapping, shape
+
+import fiona
+
 from globals import *       # Imports the filepaths defined in globals.py
 
 print('Packages imported.\n')
@@ -166,7 +174,40 @@ plt.savefig(pointplot_adp, dpi=600, facecolor="white", bbox_inches="tight")
 # ==================================
 # Plot figures: RASTER MAP OF ADP DISTRIBUTION (KARNATAKA)
 
-# NOTE: The WorldPop raster will need to be masekd twice:
+# NOTE: The WorldPop raster will need to be masked twice:
 #   1st: on the buffer multipolygon
 #   2nd: on the rural area polygon
 #   This is to ensure the final map only shows rural areas within the buffer zone (which are the only areas where population is counted).
+
+# Import the buffer area polygon 
+#   NOTE: need to use fiona to work with rasterio (GeoPandas causes attribute error)
+with fiona.open(buffermap_path, "r") as shapefile:
+    shapes = [feature["geometry"] for feature in shapefile]
+
+# Mask the WorldPop raster using polygon
+with rasterio.open(pop_tif) as src:
+    out_image, out_transform = rasterio.mask.mask(src, shapes, crop=False)
+    out_meta = src.meta
+
+# Output to new file
+with rasterio.open(pop_tif_buffer_mask, "w", **out_meta) as dest:
+    dest.write(out_image)
+
+# Import the rural area polygon (first as feather)
+feather_rural = gpd.read_feather(ghsl_poly_dissolved)
+# Export as shapefile
+feather_rural.to_file(ghsl_poly_shp)
+
+with fiona.open(ghsl_poly_shp, "r") as shapefile:
+    rural = [feature["geometry"] for feature in shapefile]
+
+# Mask the WorldPop raster using polygon
+with rasterio.open(pop_tif_buffer_mask) as src:
+    out_image, out_transform = rasterio.mask.mask(src, rural, crop=False)
+    out_meta = src.meta
+
+# Output to new file
+with rasterio.open(pop_tif_final, "w", **out_meta) as dest:
+    dest.write(out_image)
+
+
