@@ -163,6 +163,7 @@ sum_rupop_districts.to_feather(sum_rupop_districts_path)
 print(f'Rural pop points joined to district boundaries and export to {sfmt}.\n')
 timestamp(time_33s)
 
+
 # ===========
 # 3.4 Join WorldPop CROPLAND points to district boundaries
 time_34s = time.time()
@@ -283,13 +284,19 @@ if ADPcn == 'ADPc3':
         masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc3'), axis=1)
 elif ADPcn == 'ADPc5':
         masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc5'), axis=1)
+elif ADPcn == 'ADPc1':
+        masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc1'), axis=1)
+elif ADPcn == 'ADPc2':
+        masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc2'), axis=1)
+elif ADPcn == 'ADPc4':
+        masterdf['need_buffer'] = masterdf.apply(lambda row: categorise_buffer(row, 'd_pc4'), axis=1)
 
 
 # Identify districts where the ADPc5 > worldpop_rural (more agricultural population than total rural population). 
 #       or districts with no rural population (worldpop_rural = NaN)
 masterdf["d_rural_adp"] = masterdf["d_rural_adp"].fillna(-999)
-mask = (masterdf['d_rural_adp'] < 0)
-masterdf['need_buffer'][mask] = 'ineligible'
+masterdf['need_buffer'][masterdf['d_rural_adp'] < 0] = 'ineligible'
+masterdf['need_buffer'][masterdf['d_pc5'].isna()] = 'ineligible'
 
 # Remove ineligible districts and save in separate csv
 ineligibledf = masterdf[masterdf['need_buffer'] == 'ineligible']
@@ -315,7 +322,27 @@ print('Master results file exported to csv.\n')
 # 4. district_code = string format of district code
 # 5. buffer_radius = set accordingly; default 50m
 # 6. buffer_type = 'enlarge' or 'reduce'
+
 def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffer_radius, buffer_type):
+        """
+        Generate a buffer around cropland area in district
+        ...
+
+        Arguments
+        ---------
+        districts_shp   : polygon of district boundaries
+        crops_shp       : polygon of cropland in state (or district)
+        rural_points    : vector grid of population points in rural areas
+        district_code   : census designated identifier of district
+        buffer_radius   : radius (in absolute m) of buffer to be generated
+        buffer_type     : takes one of 'enlarge', 'subtract', 'unchanged'
+
+        Returns
+        -------
+        check_buffer    : GeoDataFrame with 1 row, containing buffer details tied to district geometry 
+        d_buffer_gdf    : GeoDataFrame with 1 row, containing polygon of buffered zone
+
+        """
         time_buff = time.time()
 
         # Define district boundaries
@@ -361,6 +388,12 @@ def generate_buffer(districts_shp, crops_shp, rural_points, district_code, buffe
                 ADPcn_pctotal = 'ADPc3_pctotal'
         elif ADPcn == 'ADPc5':
                 ADPcn_pctotal = 'ADPc5_pctotal'
+        elif ADPcn == 'ADPc1':
+                ADPcn_pctotal = 'ADPc1_pctotal'
+        elif ADPcn == 'ADPc2':
+                ADPcn_pctotal = 'ADPc2_pctotal'
+        elif ADPcn == 'ADPc4':
+                ADPcn_pctotal = 'ADPc4_pctotal'
         
         check_buffer = sum_buffer_points.merge(masterdf[['pc11_d_id', 'Population', 'crop_area_pc', 'rural_area_pc', ADPcn_pctotal, 'need_buffer']]
                                                , how='left', on='pc11_d_id')

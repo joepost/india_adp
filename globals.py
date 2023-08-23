@@ -26,11 +26,7 @@ repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp'
 scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-state_code = '29'             # code taken from Census India
-
-# NOTE: Set up a method for iterating through states automatically, rather than progressing one by one? 
-#       Maybe not a priority in the time remaining; won't have any effect on final submission 
-#       And recurring errors mean it is unlikely to run smoothly through all.
+state_code = '10'             # code taken from Census India
 
 # 4. Set desired GHSL model to be used
 ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch 2030, 1km,     Mollweide
@@ -157,6 +153,7 @@ ghsl_merged =           os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghs
 ghsl_merged_wgs84 =     os.path.join(outputfolder, 'intermediates', 'ghsl', 'ghsl_india_wgs84.tif')         # CRS reprojected to WGS84
 ghsl_clipped =          os.path.join(outputfolder, 'intermediates', 'ghsl', f'ghsl_{state_code}_clipped.tif')
 ghsl_poly_dissolved =   os.path.join(outputfolder, 'intermediates', 'ghsl', f'ghsl_{state_code}_vector_dissolved{sfmt}')
+ghsl_poly_shp =         os.path.join(outputfolder, 'intermediates', 'ghsl', f'ghsl_{state_code}_vector_dissolved.shp')
 rural_area_path =       os.path.join(outputfolder, 'intermediates', 'ghsl', f'rural_{state_code}_area.csv')
 
 state_filepath =     os.path.join(outputfolder, 'intermediates', 'boundaries_state', f'state_{state_code}.shp')         
@@ -178,14 +175,16 @@ sum_crpop_districts_path =  os.path.join(outputfolder, 'intermediates', 'worldpo
 
 # Output files
 # These file paths store the final output files used in the Results section
-masterdf_path =      os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}_{ADPcn}.csv')
-ineligibledf_path =  os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_{state_code}_{tru_cat}_{ADPcn}.csv')
+masterdf_path =             os.path.join(outputfolder, 'final', 'tables', f'masterdf_{state_code}_{tru_cat}_{ADPcn}.csv')
+ineligibledf_path =         os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_{state_code}_{tru_cat}_{ADPcn}.csv')
+ineligiblecombined_path =   os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_COMBINED_{tru_cat}_{ADPcn}.csv')
 
 buffergdf_path =        os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}{sfmt}')
 buffer_poly_path =      os.path.join(outputfolder, 'final', 'spatial_files', f'buffer_polygon_{state_code}_{tru_cat}_{ADPcn}.shp')
 bufferdf_path =         os.path.join(outputfolder, 'final', 'tables', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.csv')
 buffermap_path =        os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_{state_code}_{tru_cat}_{ADPcn}.shp')
 buffercombined_path =   os.path.join(outputfolder, 'final', 'tables', f'bufferdf_COMBINED_{tru_cat}_{ADPcn}.csv')
+buffercombined_map =    os.path.join(outputfolder, 'final', 'spatial_files', f'bufferdf_COMBINED_{tru_cat}_{ADPcn}.shp')
 
 pop_tif_buffer_mask =   os.path.join(outputfolder, 'final', 'spatial_files', f'adptif_{state_code}_{tru_cat}_{ADPcn}.tif')
 pop_tif_final =         os.path.join(outputfolder, 'final', 'spatial_files', f'adpfinal_{state_code}_{tru_cat}_{ADPcn}.tif')
