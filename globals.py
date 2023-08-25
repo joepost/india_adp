@@ -22,11 +22,11 @@ from re import sub
 repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
 
 # 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
-# scale = '1km'
-scale = '100m'
+scale = '1km'
+# scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-state_code = '10'             # code taken from Census India
+state_code = '29'             # code taken from Census India
 
 # 4. Set desired GHSL model to be used
 ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch 2030, 1km,     Mollweide
@@ -133,7 +133,7 @@ boundaries_district =   os.path.join(datafolder, 'boundaries', 'district.shp' ) 
 locationcodes =         os.path.join(datafolder, 'census', 'CensusIndia2011_LocationDirectory.csv')         # State and district names and codes from Census
 # pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_{scale}_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
 # NOTE: CURRENT TRIAL = 100m CROPLAND; 1km POPULATION. NOT COMPUTATIONALLY FEASIBLE TO USE 100m POP POINTS DATA. 
-pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_1km_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
+pop_tif =               os.path.join(datafolder, 'worldpop', f'ind_ppp_2011_100m_{worldpop_model}.tif')  # WorldPop UN adjusted 1km 2011 (adjust as necessary)
 cropland =              os.path.join(datafolder, 'dynamicworld', f'2020_dw_{state_code}_cropland_{scale}.tif') # DynamicWorld extracted from GEE
 agworkers_main =        os.path.join(datafolder, 'census', f'DDW-B04-{state_code}00.xls')              # Census B-04 = Main workers tables
 agworkers_marginal =    os.path.join(datafolder, 'census', f'DDW-B06-{state_code}00.xls')              # Census B-06 = Marginal workers tables

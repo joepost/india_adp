@@ -188,6 +188,6 @@ for file in ineligibledf_to_merge:
 inel_combined = pd.concat(inel_allstates_list)
 
 # Export combined buffer df to csv
-inel_combined.to_csv(ineligiblecombined_path, index=False)
+inel_combined.to_csv(ineligiblecombined_path, index=False)  
 
 
