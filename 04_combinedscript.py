@@ -16,10 +16,10 @@ script04_start = time.time()
 with open("01_preparefiles.py") as f:
     exec(f.read())
 
-with open("01c_pythonsubstitution.py") as f:
+with open("02_vectorisation.py") as f:
     exec(f.read())
 
-with open("02_pythonprocesses.py") as f:
+with open("03_aggregation_buffers.py") as f:
     exec(f.read())
 
 print("Combined script process complete.")
