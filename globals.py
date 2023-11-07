@@ -21,11 +21,11 @@ from re import sub
 repository = 'C:/Users/joepo/Documents/Uni/UCL CASA/Dissertation/india_adp' 
 
 # 2. Set spatial scale for raster imports (DynamicWorld, WorldPop)
-scale = '1km'
-# scale = '100m'
+# scale = '1km'
+scale = '100m'
 
 # 3. Set state (or list of states) to work with 
-state_code = '01'             # code taken from Census India
+state_code = '29'             # code taken from Census India
 
 # 4. Set desired GHSL model to be used
 ghsl_model = 'smod_e2030_1000'      #GHSL Settlement Model Grid,    R2023, Epoch 2030, 1km,     Mollweide

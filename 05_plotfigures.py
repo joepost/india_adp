@@ -29,6 +29,8 @@ import rasterio
 from rasterio.mask import mask
 from rasterio.features import geometry_mask
 from rasterio.plot import show
+from rasterio.merge import merge
+from rasterio.enums import Resampling
 from shapely.geometry import mapping, shape
 
 import fiona
@@ -82,6 +84,7 @@ timestamp(time_11s)
 
 # ==================================
 # Plot figures: RASTER MAP OF ADP DISTRIBUTION
+time_adpoutput = time.time()
 
 # NOTE: The WorldPop raster will need to be masked twice:
 #   1st: on the buffer multipolygon
@@ -95,6 +98,7 @@ with fiona.open(buffermap_path, "r") as shapefile:
 
 # Mask the WorldPop raster using polygon
 with rasterio.open(pop_tif) as src:
+    # src.read_masks(1)
     out_image, out_transform = rasterio.mask.mask(src, shapes, crop=False)
     out_meta = src.meta
 
@@ -120,15 +124,19 @@ with rasterio.open(pop_tif_final, "w", **out_meta) as dest:
     dest.write(out_image)
 
 
+print('ADP raster generated.\n')
+timestamp(time_adpoutput)
 
 
-# =================================================================================================================
-# 2. MERGE RESULTS FILES FOR ALL STATES
+
+
+# # =================================================================================================================
+# # 2. MERGE RESULTS FILES FOR ALL STATES
 
 
 
-# ==================
-# 2.1 Buffer files
+# # ==================
+# # 2.1 Buffer files
 
 # Merged buffer files 
 # Use glob to create list of all completed buffers
@@ -149,7 +157,7 @@ buffer_combined.to_csv(buffercombined_path, index=False)
 
 
 # ==================
-# 2.2 Buffer map
+# 2.2 Buffer map (POLYGONS WITH ATTRIBUTES)
 
 # Merged buffer files 
 # Use glob to create list of all completed buffers
@@ -164,30 +172,63 @@ for file in buffermap_to_merge:
 # Concatenate all GeoDataFrames in the list
 buffer_combined = pd.concat(buffer_allmaps_list)
 
-# 
-
 # Export combined buffer map to .shp
 buffer_combined.to_file(buffercombined_map)
 
 
 
 
+# # ==================
+# # 2.3 List of ineligible states
+
+# # Use glob to create list of all completed inel. files
+# ineligibledf_to_merge = glob.glob(os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_*_{tru_cat}_{ADPcn}.csv')) 
+
+# # Use loop to read the files into an empty list
+# inel_allstates_list = []
+# for file in ineligibledf_to_merge:
+#     statefile = pd.read_csv(file, dtype = {'pc11_s_id':str, 'pc11_d_id':str})
+#     inel_allstates_list.append(statefile)
+
+# # Concatenate all GeoDataFrames in the list
+# inel_combined = pd.concat(inel_allstates_list)
+
+# # Export combined buffer df to csv
+# inel_combined.to_csv(ineligiblecombined_path, index=False)  
+
+
+
 # ==================
-# 2.3 List of ineligible states
+# 2.4 Buffer map (RASTER)
 
-# Use glob to create list of all completed inel. files
-ineligibledf_to_merge = glob.glob(os.path.join(outputfolder, 'final', 'tables', f'ineligibledf_*_{tru_cat}_{ADPcn}.csv')) 
+# Merged buffer files 
+# Use glob to create list of all completed buffers
+adpmap_to_merge = glob.glob(os.path.join(outputfolder, 'final', 'spatial_files', f'adpfinal_*_{tru_cat}_{ADPcn}.tif')) 
 
-# Use loop to read the files into an empty list
-inel_allstates_list = []
-for file in ineligibledf_to_merge:
-    statefile = pd.read_csv(file, dtype = {'pc11_s_id':str, 'pc11_d_id':str})
-    inel_allstates_list.append(statefile)
+# Define a function to merge the list of input ADP rasters together
+def merge_adp_rasters(input_rasters, combined_output_path):
+    # Create list of input tifs to merge (mosaic) together
+    src_files_to_merge = []
+    for raster_path in input_rasters:
+        src = rasterio.open(raster_path)
+        src_files_to_merge.append(src)
+    # Merge rasters
+    mosaic, out_trans = merge(src_files_to_merge, resampling = Resampling.nearest)
+    # Get metadata from the first input raster
+    out_meta = src.meta.copy()
+    out_meta.update({
+        "driver":"GTiff",
+        "height":mosaic.shape[1],
+        "width":mosaic.shape[2],
+        "transform":out_trans
+    })
+    # Write the merged raster to an output file
+    with rasterio.open(combined_output_path, "w", **out_meta) as dest:
+        dest.write(mosaic)
 
-# Concatenate all GeoDataFrames in the list
-inel_combined = pd.concat(inel_allstates_list)
-
-# Export combined buffer df to csv
-inel_combined.to_csv(ineligiblecombined_path, index=False)  
-
+# Run the function
+time_mergerasters = time.time()
+merge_adp_rasters(adpmap_to_merge, buffercombined_map)
+print('Combined ADP raster of India generated.\n')
+timestamp(time_mergerasters)
 
