@@ -187,6 +187,7 @@ buffercombined_map =    os.path.join(outputfolder, 'final', 'spatial_files', f'b
 
 pop_tif_buffer_mask =   os.path.join(outputfolder, 'final', 'spatial_files', f'adptif_{state_code}_{tru_cat}_{ADPcn}.tif')
 pop_tif_final =         os.path.join(outputfolder, 'final', 'spatial_files', f'adpfinal_{state_code}_{tru_cat}_{ADPcn}.tif')
+pop_tif_combined =      os.path.join(outputfolder, 'final', 'spatial_files', f'adpfinal_COMBINED_{tru_cat}_{ADPcn}.tif')
 
 # Figures
 bplot_adp = os.path.join(outputfolder, 'final', 'figures', f'bplot_adp_{state_code}_{tru_cat}.png')

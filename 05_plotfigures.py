@@ -212,8 +212,10 @@ def merge_adp_rasters(input_rasters, combined_output_path):
     for raster_path in input_rasters:
         src = rasterio.open(raster_path)
         src_files_to_merge.append(src)
+    print('ADP rasters appended in list.\n')
     # Merge rasters
     mosaic, out_trans = merge(src_files_to_merge, resampling = Resampling.nearest)
+    print('ADP rasters merged.\n')
     # Get metadata from the first input raster
     out_meta = src.meta.copy()
     out_meta.update({
@@ -228,7 +230,6 @@ def merge_adp_rasters(input_rasters, combined_output_path):
 
 # Run the function
 time_mergerasters = time.time()
-merge_adp_rasters(adpmap_to_merge, buffercombined_map)
+merge_adp_rasters(adpmap_to_merge, pop_tif_combined)
 print('Combined ADP raster of India generated.\n')
 timestamp(time_mergerasters)
-

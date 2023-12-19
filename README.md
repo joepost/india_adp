@@ -6,7 +6,9 @@ India Agricultural Dependent Population: MSc Research Project
 
 This repository contains the code and supporting files for the dissertation research project 'Small-scale Estimation of Agricultural Dependent Population in India'. Code is written in python 3.10.9 using conda 23.3.1. 
 
-To run the script, enter the desired settings and state code in _globals.py_. Script 04 can then be run to execute all the component scripts in a single session. 
+To run the script, enter the desired settings and state code in _globals.py_. Script 04 can then be run to execute all the component scripts in a single session.  
+
+A Google Earth Enginge Web Map has been generated to present the output from the initial case study. This interactive map can be accessed [here](https://ucfnjpo.users.earthengine.app/view/india-adp-viewer).
 
 *Note*
 
